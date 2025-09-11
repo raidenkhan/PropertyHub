@@ -1,0 +1,84 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                Int           @id @default(autoincrement())
+  email             String        @unique
+  password          String?
+  name              String?
+  role              Role          @default(BUYER)
+  createdAt         DateTime      @default(now())
+  properties        Property[]
+  sentMessages      Message[]     @relation("SentMessages")
+  receivedMessages  Message[]     @relation("ReceivedMessages")
+  buyerTransactions Transaction[] @relation("BuyerTransactions")
+  sellerTransactions Transaction[] @relation("SellerTransactions")
+  provider  String?  // e.g. 'GOOGLE' or 'LOCAL'
+  avatar    String?
+}
+
+
+
+
+model Property {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+  type        PropertyType
+  transaction Transaction[]
+  location    String
+  createdAt   DateTime  @default(now())
+  owner       User      @relation(fields: [ownerId], references: [id])
+  ownerId     Int
+  imageUrl   String?
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  senderId   Int
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId Int
+  createdAt  DateTime @default(now())
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  status    TransactionStatus @default(PENDING)
+  property  Property @relation(fields: [propertyId], references: [id])
+  propertyId Int
+  buyer     User     @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  buyerId   Int
+  seller    User     @relation("SellerTransactions", fields: [sellerId], references: [id])
+  sellerId  Int
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  SELLER
+  BUYER
+}
+
+enum PropertyType {
+  RENT
+  SALE
+  LEASE
+}
+
+enum TransactionStatus {
+  PENDING
+  ESCROW
+  COMPLETED
+  CANCELLED
+}

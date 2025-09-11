@@ -1,0 +1,63 @@
+import { Body, Controller, Post, Get, Req, UseGuards, Res } from '@nestjs/common';
+import type { Response } from 'express';
+import { AuthService } from './auth.service';
+import { SignupDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
+import { AuthGuard } from '@nestjs/passport';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('signup')
+  signup(@Body() dto: SignupDto) {
+    return this.authService.signup(dto);
+  }
+
+  @Post('login')
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
+  }
+
+  @Post('refresh')
+  async refresh(@Body('refreshToken') token: string) {
+    return this.authService.refreshToken(token);
+  }
+@Post('google/test')
+async googleTest(@Body() body: any) {
+  const user = await this.authService.validateGoogleUser(body);
+  return this.authService.googleLogin(user);
+}
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // This initiates the Google OAuth2 login flow
+    // The guard will redirect to Google's OAuth page
+  }
+
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req, @Res() res: Response) {
+    try {
+      // Validate and get/create user
+      const user = await this.authService.validateGoogleUser(req.user);
+      
+      // Generate tokens for the user
+      const tokens = await this.authService.googleLogin(user);
+      
+      // You can either:
+      // 1. Redirect to frontend with tokens as query params (less secure)
+      const frontendUrl = `${process.env.FRONTEND_URL}/auth/success?token=${tokens.accessToken}&refresh=${tokens.refreshToken}`;
+      res.redirect(frontendUrl);
+      
+      // 2. Or return JSON response (if you're handling this via popup/iframe)
+      // return tokens;
+      
+    } catch (error) {
+      // Redirect to error page on failure
+      const errorUrl = `${process.env.FRONTEND_URL}/auth/error`;
+      res.redirect(errorUrl);
+    }
+  }
+}
