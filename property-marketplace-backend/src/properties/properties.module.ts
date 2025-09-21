@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
-import { PropertiesService } from './properties.service';
+import { PropertyService } from './properties.service';
 import { PropertiesController } from './properties.controller';
-import { PrismaService } from '../prisma/prisma.service';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+
+
 
 @Module({
   controllers: [PropertiesController],
-  providers: [PropertiesService, PrismaService],
+  providers: [PropertyService,CloudinaryService],
+   exports: [PropertyService]
 })
 export class PropertiesModule {}

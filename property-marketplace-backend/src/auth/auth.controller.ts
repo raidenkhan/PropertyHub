@@ -11,6 +11,7 @@ export class AuthController {
 
   @Post('signup')
   signup(@Body() dto: SignupDto) {
+    console.log('Signup DTO:', dto); 
     return this.authService.signup(dto);
   }
 
@@ -59,5 +60,15 @@ async googleTest(@Body() body: any) {
       const errorUrl = `${process.env.FRONTEND_URL}/auth/error`;
       res.redirect(errorUrl);
     }
+  }
+    @Get('test')
+  testEndpoint() {
+    console.log('Auth test endpoint called');
+    return { 
+      message: 'Auth module is working!', 
+      timestamp: new Date().toISOString(),
+      googleClientId: process.env.GOOGLE_CLIENT_ID ? 'Present' : 'Missing',
+      googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL
+    };
   }
 }

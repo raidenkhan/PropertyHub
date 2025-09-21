@@ -8,12 +8,14 @@ import {
   Delete,
   ParseIntPipe,
   UseGuards,
+  Req,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guards';
-import { RolesGuard } from 'src/auth/roles.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guards';
+import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('users')
 export class UsersController {
@@ -23,6 +25,27 @@ export class UsersController {
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
+
+  @Post('bank-details')
+@UseGuards(JwtAuthGuard)
+async saveBankDetails(
+  @Body() dto: { bankAccountNumber: string; bankCode: string },
+  @Req() req
+) {
+  try {
+    const updatedUser = await this.usersService.saveBankDetails(
+      req.user.userId,
+      dto.bankAccountNumber,
+      dto.bankCode
+    );
+    return {
+      status: 'success',
+       updatedUser,
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message);
+  }
+}
 
   @Get()
 @UseGuards(JwtAuthGuard, RolesGuard)

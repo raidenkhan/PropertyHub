@@ -1,0 +1,292 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+   id                    Int                 @id @default(autoincrement())
+  email                 String              @unique
+  password              String?
+  name                  String?
+  phone                 String?
+  avatar                String?
+  provider              String?             // 'GOOGLE' or 'LOCAL'
+  isActive              Boolean             @default(true)
+  emailVerified         Boolean             @default(false)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  
+  // Relations
+  userRoles      UserRole[]          @relation("UserUserRoles")
+  assignedRoles  UserRole[]          @relation("AdminAssigned")
+
+  // Property Relations
+  ownedProperties       Property[]        @relation("PropertyOwner")
+  listedProperties      Property[]        @relation("PropertyLister")
+  propertyHistoriesFrom PropertyHistory[] @relation("PropertyOwnerfrom")
+  propertyHistoriesTo   PropertyHistory[] @relation("PropertyOwnerto")
+
+  // Messages
+  sentMessages          Message[]         @relation("SentMessages")
+  receivedMessages      Message[]         @relation("ReceivedMessages")
+
+  // Transactions
+  buyerTransactions     Transaction[]     @relation("BuyerTransactions")
+  sellerTransactions    Transaction[]     @relation("SellerTransactions")
+
+  // Disputes
+  complaintsMade        Dispute[]         @relation("DisputeComplainant")
+  complaintsReceived    Dispute[]         @relation("DisputeRespondent")
+  resolvedDisputes      Dispute[]         @relation("ResolvedBy")
+
+  // Admin Activities
+  verifiedProperties    Property[]        @relation("VerifiedBy")
+  processedTransactions Transaction[]     @relation("ProcessedBy")
+
+  // Audit trail
+  createdByAdmin        User?             @relation("AdminCreated", fields: [createdByAdminId], references: [id])
+  createdByAdminId      Int?
+  createdUsers          User[]            @relation("AdminCreated")
+  paystackRecipientCode String? 
+  paystackSubaccountId  String?  
+}
+
+
+model Role {
+  id            Int        @id @default(autoincrement())
+  name          String     @unique
+  description   String?
+  permissions   String[]
+  createdAt     DateTime   @default(now())
+
+  // Relations
+  userRoles     UserRole[]
+}
+
+model UserRole {
+  id         Int   @id @default(autoincrement())
+  userId     Int
+  roleId     Int
+  assignedBy Int?
+
+  // Relations
+  user     User @relation("UserUserRoles", fields: [userId], references: [id])
+  role     Role @relation(fields: [roleId], references: [id])
+  assigner User? @relation("AdminAssigned", fields: [assignedBy], references: [id])
+}
+
+
+model Property {
+  id              Int              @id @default(autoincrement())
+  propertyId      String           @unique @default(cuid())
+  title           String
+  description     String
+  price           Float
+  type            PropertyType
+  location        String
+  coordinates     Json?
+  images          String[]
+  amenities       String[]
+  specifications  Json?
+
+  bedrooms        Int?             // Number of bedrooms
+  bathrooms       Int?             // Number of bathrooms
+  area            Float?
+
+  // Ownership & Listing
+  currentOwner    User             @relation("PropertyOwner", fields: [currentOwnerId], references: [id])
+  currentOwnerId  Int
+  listedBy        User?            @relation("PropertyLister", fields: [listedById], references: [id])
+  listedById      Int?
+
+  // Status
+  status          PropertyStatus   @default(DRAFT)
+  isVerified      Boolean          @default(false)
+  verifiedBy      User?            @relation("VerifiedBy", fields: [verifiedById], references: [id])
+  verifiedById    Int?
+  verifiedAt      DateTime?
+
+  // Timestamps
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  listedAt        DateTime?
+  soldAt          DateTime?
+
+  // Relations
+  transactions    Transaction[]
+  propertyHistory PropertyHistory[]
+  disputes        Dispute[]        @relation("DisputeProperty")
+
+  @@index([propertyId])
+  @@index([currentOwnerId])
+  @@index([status])
+}
+
+model PropertyHistory {
+  id            Int                @id @default(autoincrement())
+  propertyId    Int
+  fromOwnerId   Int?
+  toOwnerId     Int
+  transactionId Int?               @unique
+  price         Float?
+  eventType     PropertyEventType
+  eventDate     DateTime           @default(now())
+  notes         String?
+
+  property      Property           @relation(fields: [propertyId], references: [id])
+  fromOwner     User?              @relation("PropertyOwnerfrom", fields: [fromOwnerId], references: [id])
+  toOwner       User               @relation("PropertyOwnerto", fields: [toOwnerId], references: [id])
+  transaction   Transaction?       @relation(fields: [transactionId], references: [id])           
+
+
+  @@index([propertyId])
+}
+
+model Transaction {
+  id                Int               @id @default(autoincrement())
+  transactionId     String            @unique @default(cuid())
+  amount            Float
+  status            TransactionStatus @default(PENDING)
+
+  // Parties
+  buyer             User              @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  buyerId           Int
+  seller            User              @relation("SellerTransactions", fields: [sellerId], references: [id])
+  sellerId          Int
+
+  // Property
+  property          Property          @relation(fields: [propertyId], references: [id])
+  propertyId        Int
+
+  // Escrow
+  escrowAmount      Float?
+  escrowReleased    Boolean           @default(false)
+  escrowReleasedBy  User?             @relation("ProcessedBy", fields: [escrowReleasedById], references: [id])
+  escrowReleasedById Int?
+  escrowReleasedAt  DateTime?
+
+  // Payment
+  paymentMethod     String?
+  paymentReference  String?
+
+  // Timestamps
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  completedAt       DateTime?
+
+  // Relations
+  propertyHistory   PropertyHistory?
+  disputes          Dispute[]         @relation("DisputeTransaction")
+
+  @@index([transactionId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model Dispute {
+  id             Int             @id @default(autoincrement())
+  disputeId      String          @unique @default(cuid())
+  title          String
+  description    String
+  status         DisputeStatus   @default(OPEN)
+  priority       DisputePriority @default(MEDIUM)
+
+  // Parties
+  complainant    User            @relation("DisputeComplainant", fields: [complainantId], references: [id])
+  complainantId  Int
+  respondent     User            @relation("DisputeRespondent", fields: [respondentId], references: [id])
+  respondentId   Int
+
+  // Related Entities
+  property       Property?       @relation("DisputeProperty", fields: [propertyId], references: [id])
+  propertyId     Int?
+  transaction    Transaction?    @relation("DisputeTransaction", fields: [transactionId], references: [id])
+  transactionId  Int?
+
+  // Resolution
+  resolvedBy     User?           @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  resolvedById   Int?
+  resolvedAt     DateTime?
+  resolution     String?
+
+  // Timestamps
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([disputeId])
+  @@index([status])
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  senderId   Int
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId Int
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+// Enums
+enum PropertyType {
+ RENT
+ LEASE
+ SELL
+}
+
+enum PropertyStatus {
+  DRAFT
+  PENDING_VERIFICATION
+  VERIFIED
+  LISTED
+  UNDER_OFFER
+  SOLD
+  DELISTED
+  SUSPENDED
+  REJECTED
+}
+
+enum PropertyEventType {
+  CREATED
+  LISTED
+  DELISTED
+  SOLD
+  TRANSFERRED
+  VERIFIED
+  SUSPENDED
+  SUBMITTED
+}
+
+enum TransactionStatus {
+  PENDING
+  ESCROW
+  PAYMENT_CONFIRMED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum DisputeStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  CLOSED
+  ESCALATED
+}
+
+enum DisputePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
