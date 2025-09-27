@@ -1,8 +1,8 @@
 "use client"
-import { useState } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/Header"
-import { SearchFilters } from "@/components/SearchFilters"
+import { SearchFilters, FilterOptions } from "@/components/SearchFilters"
 import { PropertyGrid } from "@/components/PropertyGrid"
 import { PropertyMap } from "@/app/property-map"
 import { TypingAnimation } from "@/components/typing-animation"
@@ -12,7 +12,6 @@ import { MapPin, TrendingUp, Clock, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PropertyCard } from "@/components/PropertyCard"
-import { ProtectedRoute } from "@/lib/auth/protectedRoute"
 
 interface Property {
   id: string
@@ -168,14 +167,71 @@ const locationCategories: LocationCategory[] = [
   },
 ]
 
+// Helper function to parse price string to number for comparison
+const parsePriceToNumber = (price: string): number => {
+  const numericValue = price.replace(/[₦,]/g, '').replace(/[KMB]/g, (match) => {
+    switch (match) {
+      case 'K': return '000'
+      case 'M': return '000000'
+      case 'B': return '000000000'
+      default: return ''
+    }
+  })
+  return parseInt(numericValue) || 0
+}
+
+// Filter function
+const filterProperties = (properties: Property[], filters: FilterOptions): Property[] => {
+  return properties.filter((property) => {
+    // Location filter
+    if (filters.location && !property.location.toLowerCase().includes(filters.location.toLowerCase())) {
+      return false
+    }
+
+    // Property type filter
+    if (filters.propertyType && property.type.toLowerCase() !== filters.propertyType.toLowerCase()) {
+      return false
+    }
+
+    // Price range filter
+    if (filters.priceRange) {
+      const propertyPrice = parsePriceToNumber(property.price)
+      const priceRanges = [
+        { label: "Under ₦1M", min: 0, max: 1000000 },
+        { label: "₦1M - ₦5M", min: 1000000, max: 5000000 },
+        { label: "₦5M - ₦10M", min: 5000000, max: 10000000 },
+        { label: "₦10M - ₦50M", min: 10000000, max: 50000000 },
+        { label: "₦50M+", min: 50000000, max: Infinity },
+      ]
+      
+      const selectedRange = priceRanges.find(range => range.label === filters.priceRange)
+      if (selectedRange && (propertyPrice < selectedRange.min || propertyPrice > selectedRange.max)) {
+        return false
+      }
+    }
+
+    // Bedrooms filter
+    if (filters.bedrooms && filters.bedrooms !== "Any") {
+      const requiredBedrooms = parseInt(filters.bedrooms.replace('+', ''))
+      if (!property.bedrooms || property.bedrooms < requiredBedrooms) {
+        return false
+      }
+    }
+
+    return true
+  })
+}
+
 function LocationCategories({
   onCategorySelect,
   onLike,
   viewMode,
+  filters,
 }: {
   onCategorySelect: (category: LocationCategory) => void
   onLike: (id: string) => void
   viewMode: "grid" | "list"
+  filters: FilterOptions
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const router = useRouter()
@@ -191,90 +247,103 @@ function LocationCategories({
 
   return (
     <div className="space-y-12 px-6">
-      {locationCategories.map((category, index) => (
-        <motion.div
-          key={category.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: index * 0.1 }}
-          className="space-y-6"
-        >
-          {/* Category Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-foreground dark:text-white">{category.title}</h2>
+      {locationCategories.map((category, index) => {
+        // Filter properties in this category based on current filters
+        const filteredProperties = filterProperties(category.properties, filters)
+        
+        // Don't show category if no properties match the filters
+        if (filteredProperties.length === 0) {
+          return null
+        }
 
-              {/* Category Badges */}
-              <div className="flex items-center gap-2">
-                {category.trending && (
-                  <Badge className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900 dark:text-orange-200 dark:border-orange-700">
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    Trending
-                  </Badge>
-                )}
-                {category.recent && (
-                  <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700">
-                    <Clock className="w-3 h-3 mr-1" />
-                    New
-                  </Badge>
-                )}
-                {category.popular && (
-                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700">
-                    <Star className="w-3 h-3 mr-1" />
-                    Popular
-                  </Badge>
-                )}
+        return (
+          <motion.div
+            key={category.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            className="space-y-6"
+          >
+            {/* Category Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-foreground dark:text-white">{category.title}</h2>
+
+                {/* Category Badges */}
+                <div className="flex items-center gap-2">
+                  {category.trending && (
+                    <Badge className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900 dark:text-orange-200 dark:border-orange-700">
+                      <TrendingUp className="w-3 h-3 mr-1" />
+                      Trending
+                    </Badge>
+                  )}
+                  {category.recent && (
+                    <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700">
+                      <Clock className="w-3 h-3 mr-1" />
+                      New
+                    </Badge>
+                  )}
+                  {category.popular && (
+                    <Badge className="bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700">
+                      <Star className="w-3 h-3 mr-1" />
+                      Popular
+                    </Badge>
+                  )}
+                </div>
               </div>
+
+              {/* Show on Map Button */}
+              <Button
+                variant="outline"
+                onClick={() => handleShowOnMap(category)}
+                className="flex items-center gap-2 bg-background hover:bg-accent dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
+                aria-label={`Show ${category.location} on map`}
+              >
+                <MapPin className="w-4 h-4 dark:text-gray-300" />
+                Show on map
+              </Button>
             </div>
 
-            {/* Show on Map Button */}
-            <Button
-              variant="outline"
-              onClick={() => handleShowOnMap(category)}
-              className="flex items-center gap-2 bg-background hover:bg-accent dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
-              aria-label={`Show ${category.location} on map`}
-            >
+            {/* Category Info - Updated count to show filtered results */}
+            <div className="flex items-center gap-2 text-muted-foreground dark:text-gray-300">
               <MapPin className="w-4 h-4 dark:text-gray-300" />
-              Show on map
-            </Button>
-          </div>
+              <span>
+                {filteredProperties.length === category.properties.length 
+                  ? `Over ${category.count.toLocaleString()} homes in ${category.location}`
+                  : `${filteredProperties.length} of ${category.properties.length} homes shown in ${category.location}`
+                }
+              </span>
+            </div>
 
-          {/* Category Info */}
-          <div className="flex items-center gap-2 text-muted-foreground dark:text-gray-300">
-            <MapPin className="w-4 h-4 dark:text-gray-300" />
-            <span>
-              Over {category.count.toLocaleString()} homes in {category.location}
-            </span>
-          </div>
-
-          <motion.div
-            className={`grid gap-6 ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}
-            layout
-          >
-            {category.properties.map((property, propertyIndex) => (
-              <PropertyCard
-                key={property.id}
-                {...property}
-                onLike={onLike}
-                delay={propertyIndex * 0.1}
-                viewMode={viewMode}
-              />
-            ))}
-          </motion.div>
-
-          {/* View All Button */}
-          <div className="text-center">
-            <Button
-              variant="outline"
-              onClick={() => handleCategoryClick(category)}
-              className="px-8 py-2 bg-background hover:bg-accent dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
-              aria-label={`View all properties in ${category.location}`}
+            <motion.div
+              className={`grid gap-6 ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}
+              layout
             >
-              View all {category.count.toLocaleString()} properties in {category.location}
-            </Button>
-          </div>
-        </motion.div>
-      ))}
+              {filteredProperties.map((property, propertyIndex) => (
+                <PropertyCard
+                  key={property.id}
+                  {...property}
+                  onLike={onLike}
+                  delay={propertyIndex * 0.1}
+                  viewMode={viewMode}
+                />
+              ))}
+            </motion.div>
+
+            {/* View All Button - Updated to show filtered count */}
+            <div className="text-center">
+              <Button
+                variant="outline"
+                onClick={() => handleCategoryClick(category)}
+                className="px-8 py-2 bg-background hover:bg-accent dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
+                aria-label={`View all properties in ${category.location}`}
+              >
+                View all {filteredProperties.length} properties in {category.location}
+              </Button>
+            </div>
+          </motion.div>
+        )
+      })}
     </div>
   )
 }
@@ -285,6 +354,22 @@ export default function App() {
   const [showMap, setShowMap] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showCategories, setShowCategories] = useState(true)
+  const [filters, setFilters] = useState<FilterOptions>({
+    location: "",
+    propertyType: "",
+    priceRange: "",
+    bedrooms: "",
+  })
+
+  // Memoized filtered properties
+  const filteredProperties = useMemo(() => {
+    return filterProperties(properties, filters)
+  }, [properties, filters])
+
+  // Handle filter changes
+  const handleFiltersChange = useCallback((newFilters: FilterOptions) => {
+    setFilters(newFilters)
+  }, [])
 
   const handleLike = (id: string) => {
     setProperties((prev) =>
@@ -308,13 +393,23 @@ export default function App() {
     setSelectedCategory(null)
   }
 
+  // Count total filtered properties across all categories
+  const totalFilteredCount = useMemo(() => {
+    return locationCategories.reduce((total, category) => {
+      return total + filterProperties(category.properties, filters).length
+    }, 0)
+  }, [filters])
+
   return (
-    
     <div className="min-h-screen relative bg-background dark:bg-gray-900">
       <AnimatedBackground />
 
       <Header />
-      <SearchFilters viewMode={viewMode} onViewModeChange={setViewMode} />
+      <SearchFilters 
+        viewMode={viewMode} 
+        onViewModeChange={setViewMode} 
+        onFiltersChange={handleFiltersChange}
+      />
 
       {/* Hero Section */}
       <motion.div
@@ -379,6 +474,24 @@ export default function App() {
         </div>
       </motion.div>
 
+      {/* Results Count */}
+      {(filters.location || filters.propertyType || filters.priceRange || filters.bedrooms) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-7xl mx-auto px-6 pb-6"
+        >
+          <div className="bg-background/60 backdrop-blur-sm rounded-lg p-4 border border-border dark:bg-gray-800/60 dark:border-gray-700">
+            <p className="text-foreground dark:text-white font-medium">
+              {totalFilteredCount === 0 
+                ? "No properties match your current filters. Try adjusting your search criteria."
+                : `Showing ${totalFilteredCount} properties matching your filters`
+              }
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Properties Section */}
       {showCategories ? (
         <motion.div
@@ -387,7 +500,12 @@ export default function App() {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="max-w-7xl mx-auto px-6 py-12"
         >
-          <LocationCategories onCategorySelect={handleCategorySelect} onLike={handleLike} viewMode={viewMode} />
+          <LocationCategories 
+            onCategorySelect={handleCategorySelect} 
+            onLike={handleLike} 
+            viewMode={viewMode}
+            filters={filters}
+          />
         </motion.div>
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.6 }}>
@@ -400,13 +518,13 @@ export default function App() {
               ← Back to categories
             </button>
           </div>
-          <PropertyGrid properties={properties} viewMode={viewMode} onLike={handleLike} />
+          <PropertyGrid properties={filteredProperties} viewMode={viewMode} onLike={handleLike} />
         </motion.div>
       )}
 
       {/* Property Map */}
       <PropertyMap
-        properties={properties}
+        properties={filteredProperties}
         isOpen={showMap}
         onClose={handleCloseMap}
         selectedCategory={selectedCategory ? selectedCategory : undefined}
@@ -500,6 +618,5 @@ export default function App() {
         </div>
       </motion.footer>
     </div>
-   
   )
 }

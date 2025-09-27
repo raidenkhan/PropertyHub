@@ -1,6 +1,7 @@
+// src/app/map/page.tsx
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ArrowLeft, Grid3X3, List, Search, MapPin, TrendingUp, Clock, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -8,6 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { PropertyCard } from "@/components/PropertyCard"
 import { motion } from "framer-motion"
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
+
+
 
 interface Property {
   id: string
@@ -154,7 +159,7 @@ const locationCategories: LocationCategory[] = [
 const categoryLocationMap: { [key: string]: string } = {
   "Popular homes in Victoria Island": "Victoria Island, Lagos",
   "Trending in Lekki Phase 1": "Lekki Phase 1, Lagos",
-  "Available in Gbagada": "Gbagada, Lagos",
+  "Popular in Gbagada": "Gbagada, Lagos",
   "All Properties": "All Properties",
 }
 
@@ -281,34 +286,155 @@ export default function MapPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [mapLoaded, setMapLoaded] = useState(false)
+  const mapContainer = useRef<HTMLDivElement>(null)
+  const map = useRef<mapboxgl.Map | null>(null)
+  const markers = useRef<{[key: string]: mapboxgl.Marker}>({})
 
   // Resolve category to location for filtering
-  const resolvedLocation = categoryLocationMap[category] || category
+  const resolvedLocation = categoryLocationMap[category]
 
   // Filter properties based on search query and resolved location
-  
+
   const filteredProperties = locationCategories
     .flatMap((cat) => cat.properties)
     .filter(
       (property) =>
         (resolvedLocation === "All Properties" || property.location === resolvedLocation)
-      // &&
-        //(property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         //property.location.toLowerCase().includes(searchQuery.toLowerCase()))
     )
 
-  useEffect(() => {
-    // Simulate map loading
-    const timer = setTimeout(() => setMapLoaded(true), 1000)
-    return () => clearTimeout(timer)
-  }, [])
+useEffect(() => {
+  if (typeof window === 'undefined') return
 
-  const handlePropertyClick = (property: Property) => {
-    setSelectedProperty(property)
+  // Initialize map
+  mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || ''
+
+  if (map.current) {
+    // Clear existing markers
+    Object.values(markers.current).forEach(marker => marker.remove())
+    markers.current = {}
+  } else {
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current!,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [3.4219, 6.4281], // Default to Lagos
+      zoom: 10,
+    })
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
   }
 
-  const handleMarkerClick = (property: Property) => {
+  // Add markers when map is loaded or when category changes
+  const addMarkers = () => {
+    // Clear existing markers
+    Object.values(markers.current).forEach(marker => marker.remove())
+    markers.current = {}
+
+    // Add new markers
+    filteredProperties.forEach(property => {
+      const el = document.createElement('div')
+      el.className = 'marker'
+      el.style.width = '30px'
+      el.style.height = '30px'
+      el.style.borderRadius = '50%'
+      el.style.backgroundColor = selectedProperty?.id === property.id ? '#3b82f6' : '#6b7280'
+      el.style.border = selectedProperty?.id === property.id ? '3px solid #3b82f6' : '2px solid white'
+      el.style.cursor = 'pointer'
+      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)'
+
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([property.coordinates.lng, property.coordinates.lat])
+        .setPopup(new mapboxgl.Popup({ offset: 25 })
+          .setHTML(`
+            <div class="p-3">
+              <img src="${property.image}" alt="${property.title}" class="w-20 h-20 rounded mb-2" />
+              <h3 class="font-semibold mb-1">${property.title}</h3>
+              <p class="text-sm text-gray-600 mb-2">${property.location}</p>
+              <div class="flex justify-between items-center">
+                <div class="text-sm text-gray-500">
+                  ${property.beds ? `${property.beds} bed` : ''}
+                  ${property.baths ? ` • ${property.baths} bath` : ''}
+                </div>
+                <div class="font-bold">${property.price}${property.priceUnit || ''}</div>
+              </div>
+            </div>
+          `))
+        .addTo(map.current!)
+
+      markers.current[property.id] = marker
+
+      el.addEventListener('click', () => {
+        setSelectedProperty(property)
+        // Fly to property
+        map.current?.flyTo({
+          center: [property.coordinates.lng, property.coordinates.lat],
+          zoom: 14,
+          essential: true
+        })
+      })
+    })
+
+    // Fit bounds to show all properties
+    if (filteredProperties.length > 0) {
+      const bounds = new mapboxgl.LngLatBounds()
+      filteredProperties.forEach(property => {
+        bounds.extend([property.coordinates.lng, property.coordinates.lat])
+      })
+      map?.current?.fitBounds(bounds, {
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        maxZoom: 12
+      })
+    } else if (category !== "All Properties") {
+
+      const categoryObj = locationCategories.find(cat => cat.title === category)
+      if (categoryObj && categoryObj.properties.length > 0) {
+        const firstProperty = categoryObj.properties[0]
+        map?.current?.flyTo({
+          center: [firstProperty.coordinates.lng, firstProperty.coordinates.lat],
+          zoom: 12,
+          essential: true
+        })
+      }
+    }
+  }
+
+  if (map.current?.isStyleLoaded()) {
+    addMarkers()
+  } else {
+    map.current?.on('load', addMarkers)
+  }
+
+  return () => {
+    if (map.current) {
+      map.current.off('load', addMarkers)
+    }
+  }
+}, [category, selectedProperty]) 
+
+  // Update markers when selected property changes
+// Update markers when selected property changes
+useEffect(() => {
+  // Update marker styles
+  Object.values(markers.current).forEach(marker => {
+    const el = marker.getElement()
+    el.style.backgroundColor = '#6b7280'
+    el.style.border = '2px solid white'
+  })
+
+  if (selectedProperty && markers.current[selectedProperty.id]) {
+    const el = markers.current[selectedProperty.id].getElement()
+    el.style.backgroundColor = '#3b82f6'
+    el.style.border = '3px solid #3b82f6'
+    
+    // Center map on selected property
+    map.current?.flyTo({
+      center: [selectedProperty.coordinates.lng, selectedProperty.coordinates.lat],
+      zoom: 14,
+      essential: true
+    })
+  }
+}, [selectedProperty, category]) // ← ✅ Add category to dependencies
+
+  const handlePropertyClick = (property: Property) => {
     setSelectedProperty(property)
   }
 
@@ -394,7 +520,6 @@ export default function MapPage() {
                     onClick={() => handlePropertyClick(property)}
                   >
                     <PropertyCard
-                      //status={property.status} //use actual status
                       {...property}
                       viewMode={viewMode}
                     />
@@ -407,102 +532,35 @@ export default function MapPage() {
 
         {/* Map Section */}
         <div className="w-1/2 relative">
-          {!mapLoaded ? (
-            <div className="absolute inset-0 bg-background dark:bg-gray-900 flex items-center justify-center">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-muted-foreground dark:text-gray-300">Loading map...</p>
-              </div>
-            </div>
-          ) : (
-            <div className="h-full bg-gradient-to-br from-green-100 to-blue-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
-              {/* Map Background */}
-              <div className="absolute inset-0 opacity-20">
-                <div className="w-full h-full bg-gradient-to-br from-green-200 via-blue-200 to-purple-200 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800"></div>
-              </div>
-
-              {/* Property Markers */}
-              {filteredProperties.map((property, index) => (
-                <div
-                  key={property.id}
-                  className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 ${
-                    selectedProperty?.id === property.id ? "z-20 scale-110" : "z-10"
-                  }`}
-                  style={{
-                    left: `${20 + ((index * 15) % 60)}%`,
-                    top: `${20 + ((index * 12) % 60)}%`,
-                  }}
-                  onClick={() => handleMarkerClick(property)}
-                >
-                  <div
-                    className={`bg-background rounded-lg shadow-lg border-2 px-3 py-2 dark:bg-gray-800 dark:border-gray-700 ${
-                      selectedProperty?.id === property.id
-                        ? "border-blue-500 shadow-xl"
-                        : "border-border hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-400"
-                    }`}
-                  >
-                    <div className="text-sm font-semibold text-foreground dark:text-white">
-                      {property.price}
-                      {property.priceUnit && <span className="text-xs text-muted-foreground dark:text-gray-300">{property.priceUnit}</span>}
+          <div ref={mapContainer} className="h-full" />
+          
+          {/* Selected Property Details */}
+          {selectedProperty && (
+            <div className="absolute bottom-4 left-4 right-4 bg-background rounded-lg shadow-xl border border-border dark:bg-gray-800 dark:border-gray-700 p-4 z-10">
+              <div className="flex items-start gap-4">
+                <img
+                  src={selectedProperty.image || "/placeholder.svg"}
+                  alt={selectedProperty.title}
+                  className="w-20 h-20 rounded-lg object-cover"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground dark:text-white mb-1">{selectedProperty.title}</h3>
+                  <p className="text-sm text-muted-foreground dark:text-gray-300 mb-2">{selectedProperty.location}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-gray-300">
+                      {selectedProperty.beds && <span>{selectedProperty.beds} bed</span>}
+                      {selectedProperty.baths && <span>{selectedProperty.baths} bath</span>}
+                      {selectedProperty.sqm && <span>{selectedProperty.sqm}sqm</span>}
                     </div>
-                  </div>
-
-                  {/* Marker Pin */}
-                  <div
-                    className={`w-3 h-3 rounded-full mx-auto mt-1 ${
-                      selectedProperty?.id === property.id ? "bg-blue-500" : "bg-slate-400 dark:bg-gray-300"
-                    }`}
-                  ></div>
-                </div>
-              ))}
-
-              {/* Map Controls */}
-              <div className="absolute top-4 right-4 flex flex-col gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="bg-background dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
-                >
-                  +
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="bg-background dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300"
-                >
-                  -
-                </Button>
-              </div>
-
-              {/* Selected Property Details */}
-              {selectedProperty && (
-                <div className="absolute bottom-4 left-4 right-4 bg-background rounded-lg shadow-xl border border-border dark:bg-gray-800 dark:border-gray-700 p-4">
-                  <div className="flex items-start gap-4">
-                    <img
-                      src={selectedProperty.image || "/placeholder.svg"}
-                      alt={selectedProperty.title}
-                      className="w-20 h-20 rounded-lg object-cover"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground dark:text-white mb-1">{selectedProperty.title}</h3>
-                      <p className="text-sm text-muted-foreground dark:text-gray-300 mb-2">{selectedProperty.location}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-gray-300">
-                          {selectedProperty.beds && <span>{selectedProperty.beds} bed</span>}
-                          {selectedProperty.baths && <span>{selectedProperty.baths} bath</span>}
-                          {selectedProperty.sqm && <span>{selectedProperty.sqm}sqm</span>}
-                        </div>
-                        <div className="text-lg font-bold text-foreground dark:text-white">
-                          {selectedProperty.price}
-                          {selectedProperty.priceUnit && (
-                            <span className="text-sm text-muted-foreground dark:text-gray-300">{selectedProperty.priceUnit}</span>
-                          )}
-                        </div>
-                      </div>
+                    <div className="text-lg font-bold text-foreground dark:text-white">
+                      {selectedProperty.price}
+                      {selectedProperty.priceUnit && (
+                        <span className="text-sm text-muted-foreground dark:text-gray-300">{selectedProperty.priceUnit}</span>
+                      )}
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </div>

@@ -41,9 +41,9 @@
 
 .dark {
   /* Updated dark background to use gray-900 equivalent */
-  --background: oklch(0.111 0 0);
+  --background: oklch(21% 0.034 264.665);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.12 0 0);
+  --card: oklch(24.406% 0.05665 263.927);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.12 0 0);
   --popover-foreground: oklch(0.985 0 0);
@@ -173,4 +173,26 @@ html {
     transform, filter, backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+.marker {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.marker:hover {
+  transform: scale(1.1);
+}
+
+.mapboxgl-popup {
+  max-width: 300px;
+}
+
+.mapboxgl-popup-content {
+  padding: 0;
+  border-radius: 8px;
+}
+
+.mapboxgl-ctrl-bottom-right {
+  bottom: 20px;
+  right: 20px;
 }

@@ -1,6 +1,6 @@
 // hooks/useHostDashboard.ts
 import { useState, useEffect, useCallback } from 'react';
-import { propertyService } from '@/lib/api/propertyService';
+import { hostDashboardService } from '@/lib/api/hostDashBoardService';
 import { toast } from '@/hooks/use-toast';
 
 export interface Property {
@@ -45,6 +45,8 @@ export interface DashboardStats {
   pendingPayouts: number;
 }
 
+const CACHE_KEY = 'hostDashboardCache_v1';
+
 export const useHostDashboard = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
@@ -83,13 +85,23 @@ export const useHostDashboard = () => {
       setError(null);
 
       // Fetch all properties using your existing service
-      const response = await propertyService.getMyProperties({ limit: 100 });
+      const response = await hostDashboardService.getMyProperties({ limit: 100 });
       
       // Handle different response structures
-      const propertiesData = response.properties || response.data || response;
+      const propertiesData = response.data || response.data || response;
       
       setProperties(propertiesData);
-      setStats(calculateStats(propertiesData));
+      const computed = calculateStats(propertiesData);
+      setStats(computed);
+      // Update cache
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ properties: propertiesData, stats: computed, ts: Date.now() })
+          );
+        } catch {}
+      }
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load dashboard data';
@@ -110,10 +122,19 @@ export const useHostDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await propertyService.getMyProperties({ status });
+      const response = await hostDashboardService.getMyProperties({ status });
       const propertiesData = response.properties || response.data || response;
       setProperties(propertiesData);
-      setStats(calculateStats(propertiesData));
+      const computed = calculateStats(propertiesData);
+      setStats(computed);
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ properties: propertiesData, stats: computed, ts: Date.now() })
+          );
+        } catch {}
+      }
       return propertiesData;
     } catch (error) {
       console.error(`Failed to fetch ${status} properties:`, error);
@@ -126,6 +147,23 @@ export const useHostDashboard = () => {
   }, [calculateStats]);
 
   useEffect(() => {
+    // Hydrate from cache for instant UI on revisit
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.sessionStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const cached = JSON.parse(raw) as { properties: Property[]; stats: DashboardStats; ts: number };
+          if (cached?.properties && cached?.stats) {
+            setProperties(cached.properties);
+            setStats(cached.stats);
+            // Keep loading true so the page shows a skeleton until the fresh fetch completes
+          }
+        }
+      } catch (e) {
+        // ignore cache errors
+      }
+    }
+    // Always refresh in background
     fetchDashboardData();
   }, [fetchDashboardData]);
 
@@ -156,7 +194,7 @@ export const usePropertyActions = () => {
       setActionLoading(id, true);
       
       // Use your existing property service
-      await propertyService.deleteProperty(propertyId);
+      await hostDashboardService.deleteProperty(propertyId);
       
       toast({
         title: "Property Deleted",
@@ -186,7 +224,7 @@ export const usePropertyActions = () => {
       setActionLoading(id, true);
       
       // This would depend on your property service having an update method
-      const property = await propertyService.updateProperty(propertyId, { status: newStatus });
+      const property = await hostDashboardService.updateProperty(propertyId, { status: newStatus });
       
       const actionMessages = {
         'LISTED': 'Property Listed',

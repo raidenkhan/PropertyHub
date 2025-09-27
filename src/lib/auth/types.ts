@@ -16,6 +16,7 @@ export const UserSchema = z.object({
   emailVerified: z.boolean().optional(),
   createdAt: z.string().optional(), // ISO string from backend
   updatedAt: z.string().optional(),
+  paystackRecipientCode: z.string().nullable().optional()
 });
 
 // Infer TypeScript type from Zod schema

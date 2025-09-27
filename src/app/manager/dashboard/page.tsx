@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Home, DollarSign, MessageSquare, AlertTriangle, Users, Eye, CheckCircle, XCircle, ArrowUp, AlertCircle, Search } from "lucide-react";
-import { ProtectedRoute } from "@/lib/auth/protectedRoute";
 import { useAuth } from "@/lib/auth/authContext";
 import { AnimatedBackground } from "@/components/animated-background";
 import { Input } from "@/components/ui/input";
@@ -381,7 +380,7 @@ useEffect(() => {
   }
 
   return (
-    <ProtectedRoute requiredRoles={['PROPERTY_VERIFIER', 'ESCROW_MANAGER', 'DISPUTE_RESOLVER']}>
+    
       <div className="min-h-screen bg-background dark:bg-gray-900 relative">
         <AnimatedBackground />
         <Header />
@@ -1034,6 +1033,6 @@ useEffect(() => {
           </DialogContent>
         </Dialog>
       </div>
-    </ProtectedRoute>
+    
   );
 }

@@ -1,5 +1,5 @@
 // src/lib/api/managerService.ts
-import { getAuthHeader } from '../auth/authservice';
+import { authService, getAuthHeader } from '../auth/authservice';
 import { BACKEND_BASE_URL } from '../constants/api';
 
 const API_URL = BACKEND_BASE_URL
@@ -12,7 +12,7 @@ interface ApiResponse<T> {
 export const managerService = {
   // === PROPERTY VERIFIER ===
   getPendingProperties: async (): Promise<ApiResponse<Property[]>> => {
-    const response = await fetch(`${API_URL}/manager/properties/pending`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/pending`, {
       headers: getAuthHeader(),
     });
     if (!response.ok) {
@@ -24,7 +24,7 @@ export const managerService = {
   },
 
   approveProperty: async (propertyId: number, notes?: string): Promise<ApiResponse<Property>> => {
-    const response = await fetch(`${API_URL}/manager/properties/${propertyId}/approve`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/approve`, {
       method: 'PATCH',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
     });
@@ -37,7 +37,7 @@ export const managerService = {
   },
 
   rejectProperty: async (propertyId: number, reason: string): Promise<ApiResponse<Property>> => {
-    const response = await fetch(`${API_URL}/manager/properties/${propertyId}/reject`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/reject`, {
       method: 'PATCH',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason }),
@@ -51,7 +51,7 @@ export const managerService = {
   },
 
   suspendProperty: async (propertyId: number, reason: string): Promise<ApiResponse<Property>> => {
-    const response = await fetch(`${API_URL}/manager/properties/${propertyId}/suspend`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/suspend`, {
       method: 'PATCH',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason }),
@@ -66,7 +66,7 @@ export const managerService = {
 
   // === ESCROW MANAGER ===
   getEscrowTransactions: async (): Promise<ApiResponse<Transaction[]>> => {
-    const response = await fetch(`${API_URL}/manager/transactions/escrow`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/transactions/escrow`, {
       headers: getAuthHeader(),
     });
     if (!response.ok) {
@@ -78,7 +78,7 @@ export const managerService = {
   },
 
   releaseEscrow: async (transactionId: number, note?: string): Promise<ApiResponse<Transaction>> => {
-    const response = await fetch(`${API_URL}/manager/transactions/${transactionId}/release`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/transactions/${transactionId}/release-escrow`, {
       method: 'PATCH',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ note }),
@@ -93,7 +93,7 @@ export const managerService = {
 
   // === DISPUTE RESOLVER ===
   getDisputes: async (): Promise<ApiResponse<Dispute[]>> => {
-    const response = await fetch(`${API_URL}/manager/disputes`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/disputes`, {
       headers: getAuthHeader(),
     });
     if (!response.ok) {
@@ -105,7 +105,7 @@ export const managerService = {
   },
 
   resolveDispute: async (disputeId: number, resolution: string): Promise<ApiResponse<Dispute>> => {
-    const response = await fetch(`${API_URL}/manager/disputes/${disputeId}/resolve`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/disputes/${disputeId}/resolve`, {
       method: 'PATCH',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ resolution }),
@@ -119,7 +119,7 @@ export const managerService = {
   },
 
   escalateDispute: async (disputeId: number, escalationReason?: string): Promise<ApiResponse<Dispute>> => {
-    const response = await fetch(`${API_URL}/manager/disputes/${disputeId}/escalate`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/disputes/${disputeId}/escalate`, {
       method: 'PATCH',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ escalationReason }),
@@ -134,7 +134,7 @@ export const managerService = {
 
   // === USER MANAGEMENT ===
   suspendUser: async (userId: number, reason: string): Promise<ApiResponse<User>> => {
-    const response = await fetch(`${API_URL}/manager/users/${userId}/suspend`, {
+    const response = await authService.authenticatedFetch(`${API_URL}/manager/users/${userId}/suspend`, {
       method: 'PATCH',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason }),

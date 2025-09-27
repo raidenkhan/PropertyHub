@@ -1,5 +1,5 @@
 // lib/api/hostDashboardService.ts
-import { getAuthHeader } from '../auth/authservice';
+import { authService } from '../auth/authservice';
 import { BACKEND_BASE_URL } from '../constants/api';
 
 // Types based on your schema
@@ -106,6 +106,7 @@ export interface CreatePropertyData {
   images: string[];
   amenities: string[];
   specifications?: any;
+  status:'DRAFT' | 'PENDING_VERIFICATION' | 'VERIFIED' | 'LISTED' | 'UNDER_OFFER' | 'SOLD' | 'DELISTED' | 'SUSPENDED';
 }
 
 export interface UpdatePropertyData extends Partial<CreatePropertyData> {}
@@ -138,11 +139,10 @@ class HostDashboardService {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.status) queryParams.append('status', params.status);
 
-    const response = await fetch(`${this.baseUrl}/properties/my/properties?${queryParams}`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties/my-properties?${queryParams}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -162,11 +162,10 @@ class HostDashboardService {
    * Create new property
    */
   async createProperty(propertyData: CreatePropertyData): Promise<Property> {
-    const response = await fetch(`${this.baseUrl}/properties`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify(propertyData),
     });
@@ -184,11 +183,10 @@ class HostDashboardService {
    * Update property
    */
   async updateProperty(propertyId: number, updates: UpdatePropertyData): Promise<Property> {
-    const response = await fetch(`${this.baseUrl}/properties/${propertyId}`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties/${propertyId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify(updates),
     });
@@ -206,11 +204,10 @@ class HostDashboardService {
    * Delete property
    */
   async deleteProperty(propertyId: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/properties/${propertyId}`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties/${propertyId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -224,11 +221,10 @@ class HostDashboardService {
    * List property for sale
    */
   async listProperty(propertyId: number): Promise<Property> {
-    const response = await fetch(`${this.baseUrl}/properties/${propertyId}/list`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties/${propertyId}/list`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -245,11 +241,10 @@ class HostDashboardService {
    * Delist property
    */
   async delistProperty(propertyId: number): Promise<Property> {
-    const response = await fetch(`${this.baseUrl}/properties/${propertyId}/delist`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties/${propertyId}/delist`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -266,11 +261,10 @@ class HostDashboardService {
    * Submit property for verification
    */
   async submitForVerification(propertyId: number): Promise<Property> {
-    const response = await fetch(`${this.baseUrl}/properties/${propertyId}/submit-for-verification`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties/${propertyId}/submit-for-verification`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -287,11 +281,10 @@ class HostDashboardService {
    * Check if user can edit property
    */
   async canEditProperty(propertyId: number): Promise<{ can_edit: boolean; reason: string }> {
-    const response = await fetch(`${this.baseUrl}/properties/${propertyId}/can-edit`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties/${propertyId}/can-edit`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -319,11 +312,10 @@ class HostDashboardService {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.role) queryParams.append('role', params.role);
 
-    const response = await fetch(`${this.baseUrl}/payments/my-transactions?${queryParams}`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/payments/my-transactions?${queryParams}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -349,11 +341,10 @@ class HostDashboardService {
     completed: number;
     cancelled: number;
   }> {
-    const response = await fetch(`${this.baseUrl}/transactions/stats`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/transactions/stats`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -381,11 +372,10 @@ class HostDashboardService {
     lastMessage: Message;
     unreadCount: number;
   }>> {
-    const response = await fetch(`${this.baseUrl}/messages/conversations`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/messages/conversations`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -402,11 +392,10 @@ class HostDashboardService {
    * Get conversation with specific user
    */
   async getConversation(otherUserId: number): Promise<Message[]> {
-    const response = await fetch(`${this.baseUrl}/messages/${otherUserId}`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/messages/${otherUserId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -423,11 +412,10 @@ class HostDashboardService {
    * Send message
    */
   async sendMessage(receiverId: number, content: string): Promise<Message> {
-    const response = await fetch(`${this.baseUrl}/messages`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
       body: JSON.stringify({ receiverId, content }),
     });
@@ -445,11 +433,10 @@ class HostDashboardService {
    * Get unread message count
    */
   async getUnreadCount(): Promise<number> {
-    const response = await fetch(`${this.baseUrl}/messages/unread-count`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/messages/unread-count`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -466,11 +453,10 @@ class HostDashboardService {
    * Mark messages as read
    */
   async markAsRead(otherUserId: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/messages/${otherUserId}/read`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/messages/${otherUserId}/read`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        ...getAuthHeader(),
       },
     });
 
@@ -564,15 +550,12 @@ class HostDashboardService {
    * Upload property images (if you have a separate upload endpoint)
    */
   async uploadPropertyImages(files: File[]): Promise<string[]> {
-    const formData = new FormData();
-    files.forEach(file => {
-      formData.append('images', file);
-    });
+    const formData = new FormData(); // Corrected typo
+    files.forEach(file => formData.append('images', file));
 
-    const response = await fetch(`${this.baseUrl}/upload/property-images`, {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/upload/property-images`, {
       method: 'POST',
       headers: {
-        ...getAuthHeader(),
       },
       body: formData,
     });

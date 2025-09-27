@@ -23,9 +23,10 @@ import {
   Star,
   Eye
 } from "lucide-react";
-import { ProtectedRoute } from "@/lib/auth/protectedRoute";
 import { useAuth } from "@/lib/auth/authContext";
 import { AnimatedBackground } from "@/components/animated-background";
+import { DashboardHeroSkeleton, StatsGridSkeleton, QuickActionsSkeleton, PropertiesGridSkeleton } from "@/components/dashboard/Skeletons";
+import { ModeToggle } from "@/components/dashboard/ModeToggle";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
@@ -118,7 +119,7 @@ export default function UserDashboard() {
           });
           
           setIsLoading(false);
-        }, 1000);
+        }, 10);
       } catch (error) {
         console.error('Failed to fetch data:', error);
         toast({
@@ -136,20 +137,39 @@ export default function UserDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground dark:text-gray-300">Loading your dashboard...</p>
+      <div className="min-h-screen bg-background dark:bg-gray-900 relative">
+        <AnimatedBackground />
+        <Header />
+        <ModeToggle />
+        <DashboardHeroSkeleton />
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+          <StatsGridSkeleton />
+          <QuickActionsSkeleton />
+          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+            <CardHeader className="border-b border-border pb-0">
+              <div className="flex gap-2 p-1">
+                <div className="bg-muted h-9 w-24 rounded-md animate-pulse" />
+                <div className="bg-muted h-9 w-28 rounded-md animate-pulse" />
+                <div className="bg-muted h-9 w-28 rounded-md animate-pulse" />
+                <div className="bg-muted h-9 w-28 rounded-md animate-pulse" />
+                <div className="bg-muted h-9 w-24 rounded-md animate-pulse" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <PropertiesGridSkeleton items={6} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
   return (
-    <ProtectedRoute>
+    
       <div className="min-h-screen bg-background dark:bg-gray-900 relative">
         <AnimatedBackground />
         <Header />
+        <ModeToggle />
 
         {/* Hero Banner */}
         <motion.div
@@ -600,6 +620,6 @@ export default function UserDashboard() {
           </Card>
         </div>
       </div>
-    </ProtectedRoute>
+   
   );
 }

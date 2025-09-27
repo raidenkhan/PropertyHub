@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/lib/auth/authContext";
 import { Toaster } from "@/components/ui/sonner";
+import { RouteTransition } from "@/components/system/RouteTransition";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light" suppressHydrationWarning>
+      <head>
+          <link
+          href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
+          rel="stylesheet"
+        />
+      </head>
+     
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
@@ -35,7 +43,7 @@ export default function RootLayout({
           disableTransitionOnChange // Prevent flickering during theme changes
         >
             <AuthProvider>
-          {children}
+            {children}
            <Toaster />
         </AuthProvider>
         </ThemeProvider>

@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Shield, DollarSign, MessageSquare, AlertTriangle, Settings, Plus, Search } from "lucide-react";
-import { ProtectedRoute } from "@/lib/auth/protectedRoute";
 import { useAuth } from "@/lib/auth/authContext";
 import { AnimatedBackground } from "@/components/animated-background";
 import { Input } from "@/components/ui/input";
@@ -86,7 +85,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
+
       <div className="min-h-screen bg-background dark:bg-gray-900 relative">
         <AnimatedBackground />
         <Header />
@@ -388,6 +387,6 @@ export default function AdminDashboard() {
           </Card>
         </div>
       </div>
-    </ProtectedRoute>
+    
   );
 }

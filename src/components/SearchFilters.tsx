@@ -1,6 +1,8 @@
+// Updated SearchFilters.tsx with working filter logic
+
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Filter, Grid3X3, List, Home, Building, TreePine, Search } from "lucide-react"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
@@ -9,12 +11,20 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet"
 import { motion } from "framer-motion"
 
+export interface FilterOptions {
+  location: string
+  propertyType: string
+  priceRange: string
+  bedrooms: string
+}
+
 interface SearchFiltersProps {
   viewMode: "grid" | "list"
   onViewModeChange: (mode: "grid" | "list") => void
+  onFiltersChange: (filters: FilterOptions) => void // New prop for filter changes
 }
 
-export function SearchFilters({ viewMode, onViewModeChange }: SearchFiltersProps) {
+export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: SearchFiltersProps) {
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [location, setLocation] = useState("")
   const [propertyType, setPropertyType] = useState("Any type")
@@ -25,16 +35,44 @@ export function SearchFilters({ viewMode, onViewModeChange }: SearchFiltersProps
     { id: "apartment", label: "Apartment", icon: Building },
     { id: "house", label: "House", icon: Home },
     { id: "commercial", label: "Commercial", icon: Building },
+    { id: "office", label: "Office", icon: Building },
     { id: "land", label: "Land", icon: TreePine },
   ]
 
-  const priceRanges = ["Any price", "Under ₦1M", "₦1M - ₦5M", "₦5M - ₦10M", "₦10M+"]
-  const bedroomOptions = ["Any", "1+", "2+", "3+", "4+"]
+  const priceRanges = [
+    { label: "Any price", min: 0, max: Infinity },
+    { label: "Under ₦1M", min: 0, max: 1000000 },
+    { label: "₦1M - ₦5M", min: 1000000, max: 5000000 },
+    { label: "₦5M - ₦10M", min: 5000000, max: 10000000 },
+    { label: "₦10M - ₦50M", min: 10000000, max: 50000000 },
+    { label: "₦50M+", min: 50000000, max: Infinity },
+  ]
+
+  const bedroomOptions = ["Any", "1+", "2+", "3+", "4+", "5+"]
+
+  // Apply filters whenever filter state changes
+  useEffect(() => {
+    const filters: FilterOptions = {
+      location: location.trim(),
+      propertyType: propertyType === "Any type" ? "" : propertyType,
+      priceRange: priceRange === "Any price" ? "" : priceRange,
+      bedrooms: bedrooms === "Any" ? "" : bedrooms,
+    }
+    onFiltersChange(filters)
+  }, [location, propertyType, priceRange, bedrooms, onFiltersChange])
 
   const toggleFilter = (filter: string) => {
-    setActiveFilters((prev) =>
-      prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]
-    )
+    setActiveFilters((prev) => {
+      const updated = prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]
+      
+      // Update corresponding state based on filter type
+      const propertyTypeFilter = propertyTypes.find(type => type.id === filter)
+      if (propertyTypeFilter) {
+        setPropertyType(updated.includes(filter) ? propertyTypeFilter.label : "Any type")
+      }
+      
+      return updated
+    })
   }
 
   const handlePropertyTypeSelect = (value: string) => {
@@ -42,22 +80,39 @@ export function SearchFilters({ viewMode, onViewModeChange }: SearchFiltersProps
     if (value !== "Any type") {
       const typeId = propertyTypes.find((type) => type.label === value)?.id
       if (typeId && !activeFilters.includes(typeId)) {
-        setActiveFilters((prev) => [...prev, typeId])
+        setActiveFilters((prev) => [...prev.filter(f => !propertyTypes.some(t => t.id === f)), typeId])
       }
+    } else {
+      // Remove all property type filters
+      setActiveFilters((prev) => prev.filter(f => !propertyTypes.some(t => t.id === f)))
     }
   }
 
   const handlePriceRangeSelect = (value: string) => {
     setPriceRange(value)
-    if (value !== "Any price" && !activeFilters.includes(value)) {
-      setActiveFilters((prev) => [...prev, value])
+    
+    // Update active filters for visual feedback
+    const currentPriceFilters = activeFilters.filter(f => priceRanges.some(r => r.label === f))
+    const newFilters = activeFilters.filter(f => !priceRanges.some(r => r.label === f))
+    
+    if (value !== "Any price") {
+      setActiveFilters([...newFilters, value])
+    } else {
+      setActiveFilters(newFilters)
     }
   }
 
   const handleBedroomsSelect = (value: string) => {
     setBedrooms(value)
-    if (value !== "Any" && !activeFilters.includes(value)) {
-      setActiveFilters((prev) => [...prev, value])
+    
+    // Update active filters for visual feedback
+    const currentBedroomFilters = activeFilters.filter(f => bedroomOptions.includes(f))
+    const newFilters = activeFilters.filter(f => !bedroomOptions.includes(f))
+    
+    if (value !== "Any") {
+      setActiveFilters([...newFilters, value])
+    } else {
+      setActiveFilters(newFilters)
     }
   }
 
@@ -67,6 +122,17 @@ export function SearchFilters({ viewMode, onViewModeChange }: SearchFiltersProps
     setPriceRange("Any price")
     setBedrooms("Any")
     setLocation("")
+  }
+
+  const handleSearch = () => {
+    // Force trigger filter update when search button is clicked
+    const filters: FilterOptions = {
+      location: location.trim(),
+      propertyType: propertyType === "Any type" ? "" : propertyType,
+      priceRange: priceRange === "Any price" ? "" : priceRange,
+      bedrooms: bedrooms === "Any" ? "" : bedrooms,
+    }
+    onFiltersChange(filters)
   }
 
   return (
@@ -115,6 +181,13 @@ export function SearchFilters({ viewMode, onViewModeChange }: SearchFiltersProps
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-48 bg-background border-border dark:bg-gray-800 dark:border-gray-600">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-sm text-foreground hover:bg-accent dark:text-gray-200 dark:hover:bg-gray-700"
+                    onClick={() => handlePropertyTypeSelect("Any type")}
+                  >
+                    Any type
+                  </Button>
                   {propertyTypes.map((type) => (
                     <Button
                       key={type.id}
@@ -148,12 +221,12 @@ export function SearchFilters({ viewMode, onViewModeChange }: SearchFiltersProps
                 <PopoverContent className="w-48 bg-background border-border dark:bg-gray-800 dark:border-gray-600">
                   {priceRanges.map((range) => (
                     <Button
-                      key={range}
+                      key={range.label}
                       variant="ghost"
                       className="w-full justify-start text-sm text-foreground hover:bg-accent dark:text-gray-200 dark:hover:bg-gray-700"
-                      onClick={() => handlePriceRangeSelect(range)}
+                      onClick={() => handlePriceRangeSelect(range.label)}
                     >
-                      {range}
+                      {range.label}
                     </Button>
                   ))}
                 </PopoverContent>
@@ -192,6 +265,7 @@ export function SearchFilters({ viewMode, onViewModeChange }: SearchFiltersProps
 
             {/* Search Button */}
             <motion.button
+              onClick={handleSearch}
               className="bg-gradient-to-r from-blue-600 to-violet-600 text-white p-2 rounded-full hover:shadow-lg transition-all duration-200 dark:from-blue-700 dark:to-violet-700 sm:self-center"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
@@ -237,15 +311,15 @@ export function SearchFilters({ viewMode, onViewModeChange }: SearchFiltersProps
 
           {/* Right Controls */}
           <div className="flex items-center gap-3">
-            {/* More Filters Button */}
+            {/* Clear Filters Button */}
             <Button
               variant="outline"
-              onClick={() => setActiveFilters([])} // Modified to clear filters for testing; revert to toggle if needed
+              onClick={clearAllFilters}
               className="bg-background border-border hover:bg-accent rounded-full min-w-[100px] dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-gray-300"
               aria-label="Clear filters"
             >
               <Filter className="w-4 h-4 mr-2 dark:text-gray-300" />
-              Filters
+              Clear Filters
               {activeFilters.length > 0 && (
                 <Badge
                   variant="secondary"

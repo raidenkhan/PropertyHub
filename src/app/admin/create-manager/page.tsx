@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Shield, User, Mail, Key, Plus, AlertTriangle } from "lucide-react";
-import { ProtectedRoute } from "@/lib/auth/protectedRoute";
 import { adminService } from "@/lib/api/adminService";
 import { toast } from "@/hooks/use-toast";
 import { AnimatedBackground } from "@/components/animated-background";
@@ -112,7 +111,7 @@ export default function CreateManagerPage() {
   };
 
   return (
-    <ProtectedRoute requiredRoles={['ADMIN', 'SUPER_ADMIN']}>
+    
       <div className="min-h-screen bg-background dark:bg-gray-900 relative">
         <AnimatedBackground />
         <Header />
@@ -299,6 +298,6 @@ export default function CreateManagerPage() {
           </Card>
         </motion.div>
       </div>
-    </ProtectedRoute>
+    
   );
 }

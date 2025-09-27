@@ -1,6 +1,7 @@
 // lib/auth/authservice.ts
 import { BACKEND_BASE_URL } from '../constants/api';
 import { validateUser, User } from './types';
+import Cookies from 'js-cookie';
 
 export interface AuthTokens {
   accessToken: string;
@@ -16,21 +17,20 @@ export interface SignupRequest {
   email: string;
   password: string;
   name?: string;
-  // ❌ Remove role — public signup should NOT allow role selection
-  // role?: 'ADMIN' | 'MANAGER' | 'SELLER' | 'BUYER';
+  phone?:string
   provider?: string;
   avatar?: string;
 }
 export const getAuthHeader = ():Record<string,string> => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('refreshToken');
+    const token = Cookies.get('accessToken');
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   }
   return {};
 };
 
 export interface AuthResponse extends AuthTokens {
-  user: User; // 👈 Make it required — backend always sends it
+  user: User; //  Make it required — backend always sends it
 }
 
 class AuthService {
@@ -40,9 +40,9 @@ class AuthService {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      this.accessToken = localStorage.getItem('accessToken');
-      this.refreshToken = localStorage.getItem('refreshToken');
-      const storedUser = localStorage.getItem('user');
+      this.accessToken = Cookies.get('accessToken') || null;
+      this.refreshToken = Cookies.get('refreshToken') || null;
+      const storedUser = Cookies.get('user');
       if (storedUser) {
         try {
           const parsed = JSON.parse(storedUser);
@@ -94,7 +94,7 @@ class AuthService {
         ...userData,
         provider: userData.provider || 'LOCAL',
         avatar: userData.avatar || 'https://i.pravatar.cc/150?img=3',
-        // ❌ DO NOT send role — backend auto-assigns 'USER'
+        
       };
 
       const response = await fetch(`${BACKEND_BASE_URL}/auth/signup`, {
@@ -128,8 +128,8 @@ class AuthService {
     this.refreshToken = refreshToken;
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+      Cookies.set('accessToken', accessToken, { secure: true, sameSite: 'strict' });
+      Cookies.set('refreshToken', refreshToken, { secure: true, sameSite: 'strict' });
     }
   }
 
@@ -137,7 +137,7 @@ class AuthService {
   private setUser(user: User): void {
     this.user = user;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(user));
+      Cookies.set('user', JSON.stringify(user), { secure: true, sameSite: 'strict' });
     }
   }
 
@@ -218,9 +218,9 @@ class AuthService {
     this.user = null;
 
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+      Cookies.remove('accessToken');
+      Cookies.remove('refreshToken');
+      Cookies.remove('user');
     }
   }
 
