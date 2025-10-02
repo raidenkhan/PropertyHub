@@ -10,15 +10,29 @@ import { MessagesModule } from './messages/messages.module';
 import { ManagerModule } from './manager/manager.module';
 import { PaymentModule } from './payments/payment.module';
 import { AdminModule } from './admin/admin.module';
+import { ChatGateway } from './gateway/chat.gateway';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { WsJwtGuard } from './auth/guards/ws-jwt.guard';
+import { NotificationsModule } from './notifications/notifications.module';
 
 
 @Module({
-  imports: [AuthModule, UsersModule, PrismaModule, PropertiesModule,TransactionsModule,MessagesModule,ManagerModule,PaymentModule,AdminModule
+  imports: [AuthModule, UsersModule, PrismaModule, PropertiesModule,TransactionsModule,MessagesModule,ManagerModule,PaymentModule,AdminModule,NotificationsModule
     // ,MulterModule.register({
     //   dest:'./uploads'
     // })
+    ,MessagesModule,ConfigModule.forRoot({isGlobal:true}),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '15m' },
+      }),
+    }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,ChatGateway,WsJwtGuard,],
 })
 export class AppModule {}

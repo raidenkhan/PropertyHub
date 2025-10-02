@@ -16,6 +16,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guards';
 import { RolesGuard } from '../auth/roles.guard';
+import { SaveBankDetailsDto } from './dto/save-bank-details.dto';
 
 @Controller('users')
 export class UsersController {
@@ -26,29 +27,47 @@ export class UsersController {
     return this.usersService.create(dto);
   }
 
-  @Post('bank-details')
-@UseGuards(JwtAuthGuard)
-async saveBankDetails(
-  @Body() dto: { bankAccountNumber: string; bankCode: string },
-  @Req() req
-) {
-  try {
-    const updatedUser = await this.usersService.saveBankDetails(
-      req.user.userId,
-      dto.bankAccountNumber,
-      dto.bankCode
-    );
-    return {
-      status: 'success',
-       updatedUser,
-    };
-  } catch (error) {
-    throw new BadRequestException(error.message);
+
+  @Get('payout-providers')
+  @UseGuards(JwtAuthGuard)
+  async getBankList() {
+    try {
+      const banks = await this.usersService.getBankList();
+      return {
+        status: 'success',
+        data: banks,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
-}
+
+  @Post('bank-details')
+  @UseGuards(JwtAuthGuard)
+  async saveBankDetails(
+    @Body() dto: any,
+    @Req() req:any,
+  ) {
+    try {
+    
+      const updatedUser = await this.usersService.saveBankDetails(
+        parseInt(req.user.userId),
+        dto.type,
+        dto.accountNumber,
+        dto.bankCode,
+      );
+      return {
+        status: 'success',
+        message: 'Payout details saved successfully.',
+        data: updatedUser,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
   @Get()
-@UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   findAll() {
     return this.usersService.findAll();
   }

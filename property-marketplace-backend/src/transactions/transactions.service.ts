@@ -58,6 +58,72 @@ export class TransactionService {
     return transaction;
   }
 
+ async releaseEscrow(transactionId: number, releaserId: number, notes?: string) {
+    // 1. Get transaction + releaser
+    const [transaction, releaser] = await Promise.all([
+      this.prisma.transaction.findUnique({
+        where: { id: transactionId },
+        include: {
+          buyer: true,
+          seller: true,
+          property: true,
+        },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: releaserId },
+        include: {
+          userRoles: {
+            include: { role: true },
+          },
+        },
+      }),
+    ]);
+
+    if (!transaction) {
+      throw new BadRequestException('Transaction not found');
+    }if (!releaser) {
+      throw new ForbiddenException('Releaser not found');
+    }
+
+    // 2. Check releaser has permission
+    const releaserRoles = releaser.userRoles.map(ur => ur.role.name);
+    const canRelease = releaserRoles.some(role =>
+      ['ESCROW_MANAGER', 'ADMIN', 'SUPER_ADMIN'].includes(role)
+    );
+
+    if (!canRelease) {
+      throw new ForbiddenException('Only Escrow Managers or Admins can release escrow');
+    }
+
+    // 3. Validate transaction status
+    if (!['ESCROW', 'PAYMENT_CONFIRMED'].includes(transaction.status)) {
+      throw new BadRequestException(`Cannot release escrow: transaction is ${transaction.status}`);
+    }
+
+    // 4. Update transaction
+    const updatedTransaction = await this.prisma.transaction.update({
+      where: { id: transactionId },
+       data:{
+        status: 'COMPLETED',
+        escrowReleased: true,
+        escrowReleasedById: releaserId,
+        escrowReleasedAt: new Date(),
+        ...(notes ? { paymentReference: notes } : {}),
+      },
+      include: {
+        buyer: { select: { id: true, name: true, email: true } },
+        seller: { select: { id: true, name: true, email: true } },
+        property: { select: { id: true, title: true } },
+      },
+    });
+      await this.propertyService.transferOwnership(
+      transaction.propertyId,
+      transaction.buyerId,
+      transaction.id,
+      transaction.amount
+    );
+    return updatedTransaction;
+  }
   // In TransactionService
 async getTransactionById(id: number) {
   const transaction = await this.prisma.transaction.findUnique({
@@ -110,57 +176,57 @@ async getTransactionById(id: number) {
     return updatedTransaction;
   }
 
-  async releaseEscrow(transactionId: number, managerId: number) {
-    // Check if manager has permission
-    const manager = await this.prisma.user.findUnique({
-      where: { id: managerId },
-      include: {
-        userRoles: {
-          include: { role: true }
-        }
-      }
-    });
+  // async releaseEscrow(transactionId: number, managerId: number) {
+  //   // Check if manager has permission
+  //   const manager = await this.prisma.user.findUnique({
+  //     where: { id: managerId },
+  //     include: {
+  //       userRoles: {
+  //         include: { role: true }
+  //       }
+  //     }
+  //   });
 
-    const managerRoles = manager?.userRoles.map(ur => ur.role.name);
-    if (!managerRoles?.includes('ESCROW_MANAGER') && !managerRoles?.includes('ADMIN') && !managerRoles?.includes('SUPER_ADMIN')) {
-      throw new ForbiddenException('Insufficient permissions to release escrow');
-    }
+  //   const managerRoles = manager?.userRoles.map(ur => ur.role.name);
+  //   if (!managerRoles?.includes('ESCROW_MANAGER') && !managerRoles?.includes('ADMIN') && !managerRoles?.includes('SUPER_ADMIN')) {
+  //     throw new ForbiddenException('Insufficient permissions to release escrow');
+  //   }
 
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { id: transactionId },
-      include: { property: true }
-    });
+  //   const transaction = await this.prisma.transaction.findUnique({
+  //     where: { id: transactionId },
+  //     include: { property: true }
+  //   });
 
-    if (!transaction) {
-      throw new NotFoundException('Transaction not found');
-    }
+  //   if (!transaction) {
+  //     throw new NotFoundException('Transaction not found');
+  //   }
 
-    if (transaction.status !== 'ESCROW') {
-      throw new BadRequestException('Transaction is not in escrow state');
-    }
+  //   if (transaction.status !== 'ESCROW') {
+  //     throw new BadRequestException('Transaction is not in escrow state');
+  //   }
 
-    // Complete the transaction
-    const completedTransaction = await this.prisma.transaction.update({
-      where: { id: transactionId },
-      data: {
-        status: 'COMPLETED',
-        escrowReleased: true,
-        escrowReleasedById: managerId,
-        escrowReleasedAt: new Date(),
-        completedAt: new Date()
-      }
-    });
+  //   // Complete the transaction
+  //   const completedTransaction = await this.prisma.transaction.update({
+  //     where: { id: transactionId },
+  //     data: {
+  //       status: 'COMPLETED',
+  //       escrowReleased: true,
+  //       escrowReleasedById: managerId,
+  //       escrowReleasedAt: new Date(),
+  //       completedAt: new Date()
+  //     }
+  //   });
 
-    // Transfer property ownership
-    await this.propertyService.transferOwnership(
-      transaction.propertyId,
-      transaction.buyerId,
-      transaction.id,
-      transaction.amount
-    );
+  //   // Transfer property ownership
+  //   await this.propertyService.transferOwnership(
+  //     transaction.propertyId,
+  //     transaction.buyerId,
+  //     transaction.id,
+  //     transaction.amount
+  //   );
 
-    return completedTransaction;
-  }
+  //   return completedTransaction;
+  // }
 
   async cancelTransaction(transactionId: number, userId: number, reason?: string) {
     const transaction = await this.prisma.transaction.findUnique({

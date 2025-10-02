@@ -35,6 +35,8 @@ model User {
   sentMessages          Message[]         @relation("SentMessages")
   receivedMessages      Message[]         @relation("ReceivedMessages")
 
+   notifications         Notification[]    @relation("UserNotifications")
+
   // Transactions
   buyerTransactions     Transaction[]     @relation("BuyerTransactions")
   sellerTransactions    Transaction[]     @relation("SellerTransactions")
@@ -56,7 +58,31 @@ model User {
   paystackSubaccountId  String?  
 }
 
+model Notification {
+  id                    Int                 @id @default(autoincrement())
+  userId                Int
+  type                  NotificationType
+  title                 String
+  message               String              @db.Text
+  relatedPropertyId     Int?
+  relatedTransactionId  Int?
+  relatedDisputeId      Int?
+  metadata              Json?
+  isRead                Boolean             @default(false)
+  createdAt             DateTime            @default(now())
+  readAt                DateTime?
 
+  // Relations
+  user                  User                @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  property              Property?           @relation("NotificationProperty", fields: [relatedPropertyId], references: [id], onDelete: SetNull)
+  transaction           Transaction?        @relation("NotificationTransaction", fields: [relatedTransactionId], references: [id], onDelete: SetNull)
+  dispute               Dispute?            @relation("NotificationDispute", fields: [relatedDisputeId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([type])
+}
 model Role {
   id            Int        @id @default(autoincrement())
   name          String     @unique
@@ -121,6 +147,8 @@ model Property {
   transactions    Transaction[]
   propertyHistory PropertyHistory[]
   disputes        Dispute[]        @relation("DisputeProperty")
+  //notifications
+  notifications         Notification[]      @relation("NotificationProperty")
 
   @@index([propertyId])
   @@index([currentOwnerId])
@@ -183,6 +211,9 @@ model Transaction {
   propertyHistory   PropertyHistory?
   disputes          Dispute[]         @relation("DisputeTransaction")
 
+  //notifications
+  notifications         Notification[]      @relation("NotificationTransaction")
+
   @@index([transactionId])
   @@index([buyerId])
   @@index([sellerId])
@@ -215,6 +246,8 @@ model Dispute {
   resolvedAt     DateTime?
   resolution     String?
 
+  notifications         Notification[]      @relation("NotificationDispute")
+
   // Timestamps
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -232,6 +265,7 @@ model Message {
   receiverId Int
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
+  isReported Boolean @default(false)
 
   @@index([senderId])
   @@index([receiverId])
@@ -239,9 +273,9 @@ model Message {
 
 // Enums
 enum PropertyType {
- RENT
- LEASE
- SELL
+OFFICE
+APPARTMENT
+LAND
 }
 
 enum PropertyStatus {
@@ -289,4 +323,19 @@ enum DisputePriority {
   MEDIUM
   HIGH
   CRITICAL
+}
+
+enum NotificationType {
+  PROPERTY_APPROVED
+  PROPERTY_REJECTED
+  PROPERTY_SUSPENDED
+  PROPERTY_VERIFICATION_REQUIRED
+  TRANSACTION_ESCROW_RELEASED
+  TRANSACTION_PAYMENT_CONFIRMED
+  TRANSACTION_COMPLETED
+  DISPUTE_RESOLVED
+  DISPUTE_ESCALATED
+  MESSAGE_RECEIVED
+  ACCOUNT_SUSPENDED
+  SYSTEM_ANNOUNCEMENT
 }

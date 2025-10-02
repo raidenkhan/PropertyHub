@@ -1,10 +1,27 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMessageDto } from './dto/create-message.dto';
-
+import sanitizeHtml from 'sanitize-html';
 @Injectable()
 export class MessagesService {
   constructor(private prisma: PrismaService) {}
+
+   private sanitizeMessage(content: string): string {
+    // Remove phone numbers (Nigerian format + international)
+    const phoneRegex = /(\+?234\s?|0)?[789]\d{9}\b/g;
+    let cleaned = content.replace(phoneRegex, '[PHONE REDACTED]');
+    
+    // Remove emails
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    cleaned = cleaned.replace(emailRegex, '[EMAIL REDACTED]');
+    
+    // Sanitize HTML/script tags
+     return sanitizeHtml(cleaned, {
+     allowedTags: [],
+     allowedAttributes: {},
+    });
+    
+  }
 
   async create(senderId: number, dto: CreateMessageDto) {
     // Validate that both users exist
@@ -51,7 +68,20 @@ export class MessagesService {
     });
   }
 
-
+ async createMessage(dto: { senderId: number; receiverId: number; content: string }) {
+  const sanitizedContent = this.sanitizeMessage(dto.content);  
+  return this.prisma.message.create({
+       data:{
+        senderId: dto.senderId,
+        receiverId: dto.receiverId,
+        content: sanitizedContent
+      },
+      include: {
+        sender: { select: { id: true, name: true, email: true } },
+        receiver: { select: { id: true, name: true, email: true } },
+      },
+    });
+  }
 
   async findConversation(userId: number, otherUserId: number) {
     // Validate users exist and user has access
@@ -241,6 +271,8 @@ export class MessagesService {
     });
   }
 
+
+
   // Search messages (for admin)
   async searchMessages(query: string, limit: number = 100) {
     return this.prisma.message.findMany({
@@ -271,6 +303,26 @@ export class MessagesService {
     });
   }
 
+
+async getUserWithRoles(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return {
+      ...user,
+      roles: user.userRoles.map(ur => ur.role.name),
+    };
+  }
   // Get message statistics (for admin dashboard)
   async getMessageStats() {
     const [totalMessages, todayMessages, activeConversations] = await Promise.all([
@@ -298,4 +350,102 @@ export class MessagesService {
       activeConversations
     };
   }
+
+async getConversations(userId: number) {
+    // Get all users this user has chatted with
+    const sent = await this.prisma.message.findMany({
+      where: { senderId: userId },
+   
+      select: {
+        receiver: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      distinct: ['receiverId'],
+    });
+
+
+    const received = await this.prisma.message.findMany({
+      where: { receiverId: userId },
+      select: {
+        sender: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      distinct: ['senderId'],
+    });
+
+    const sentUsers = sent
+    .map(item => item.receiver)
+    .filter(Boolean) // Remove nulls
+    .map(receiver => ({
+      id: receiver.id,
+      name: receiver.name || 'Unknown',
+      email: receiver.email,
+    }));
+    
+
+  const receivedUsers = received
+    .map(item => item.sender)
+    .filter(Boolean) // Remove nulls
+    .map(sender => ({
+      id: sender.id,
+      name: sender.name || 'Unknown',
+      email: sender.email,
+    }));
+
+    
+    // Merge and deduplicate
+   const allUsers = [...sentUsers, ...receivedUsers];
+
+  const uniqueUsers = Array.from(
+    new Map(allUsers.map(user => [user.id, user])).values()
+  );
+
+
+ return uniqueUsers
+  }
+
+  async getMessages(senderId: number, receiverId: number) {
+    return this.prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId, receiverId },
+          { senderId: receiverId, receiverId: senderId },
+        ],
+      },
+      include: {
+        sender: { select: { id: true, name: true } },
+        receiver: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async reportMessage(messageId: number, reporterId: number) {
+    // Verify reporter is sender or receiver
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      throw new BadRequestException('Message not found');
+    }
+
+    if (message.senderId !== reporterId && message.receiverId !== reporterId) {
+      throw new ForbiddenException('You can only report messages you are part of');
+    }
+
+    return this.prisma.message.update({
+      where: { id: messageId },
+     data:  { isReported: true },
+      include: {
+        sender: { select: { id: true, name: true } },
+        receiver: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  
+
 }

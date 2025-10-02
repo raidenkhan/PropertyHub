@@ -17,6 +17,53 @@ import { Roles } from '../auth/roles.decorator';
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
+  @Post(':userId/mark-read')
+async markAsRead(@Param('userId') userId: string, @Req() req) {
+  await this.messagesService.markAsRead(req.user.userId, parseInt(userId));
+  return {
+    status: 'success',
+    message: 'Messages marked as read',
+  };
+}
+   @Get()
+  async getConversations(@Req() req) {
+    console.log(req.user)
+    const conversations = await this.messagesService.getConversations(req.user.userId);
+    return {
+      status: 'success',
+       conversations,
+    };
+  }
+  @Get('unread-count')
+async getUnreadCount(@Req() req) {
+  const count = await this.messagesService.getTotalUnreadCount(req.user.userId);
+  return { status: 'success', count };
+}
+   @Get(':userId')
+  async getMessages(@Param('userId') userId: string, @Req() req) {
+    console.log("\n\n\n\nright here right now\n\n\n")
+    const messages = await this.messagesService.getMessages(
+      req.user.userId,
+      parseInt(userId),
+    );
+    return {
+      status: 'success',
+       messages,
+    };
+  }
+   @Post(':messageId/report')
+  async reportMessage(@Param('messageId') messageId: string, @Req() req) {
+    const result = await this.messagesService.reportMessage(
+      parseInt(messageId),
+      req.user.userId,
+    );
+    return {
+      status: 'success',
+      message: 'Message reported successfully',
+       result,
+    };
+  }
+
 
   @Post()
   async create(@Req() req, @Body() dto: CreateMessageDto) {

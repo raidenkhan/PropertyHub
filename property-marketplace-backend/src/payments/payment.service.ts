@@ -356,7 +356,7 @@ export class PaymentService {
    * Private: Move successful payment to escrow
    */
   private async moveToEscrow(transaction: any, paystackData: any) {
-    const escrowAmount = transaction.amount * 0.1; // 10% escrow
+    const escrowAmount = transaction.amount; // Hold 100% of the funds in escrow
     const autoReleaseAt = new Date();
     const escrowDays = parseInt(this.config.get<string>('ESCROW_AUTO_RELEASE_DAYS') || '30');
     autoReleaseAt.setDate(autoReleaseAt.getDate() + escrowDays);

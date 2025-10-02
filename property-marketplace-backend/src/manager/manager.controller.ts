@@ -130,6 +130,20 @@ export class ManagerController {
     return this.managerService.getEscrowTransactions();
   }
 
+  @Patch('transactions/:id/release-escrow')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'ESCROW_MANAGER')
+  async releaseEscrow(
+    @Param('id', ParseIntPipe) transactionId: number,
+    @Body() dto: { notes?: string },
+    @Req() req,
+  ) {
+    return this.managerService.releaseEscrow(
+      transactionId,
+      dto.notes,
+      req.user.userId,
+    );
+  }
+
   // === DISPUTE MANAGEMENT ===
   @Get('disputes')
   @Roles('SUPER_ADMIN', 'ADMIN', 'DISPUTE_RESOLVER')

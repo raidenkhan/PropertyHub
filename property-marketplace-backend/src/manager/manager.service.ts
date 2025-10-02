@@ -11,12 +11,13 @@ import {
   ApproveRejectPropertyDto, 
   CreateReportDto 
 } from './dto/manager.dto';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 import { PaystackService } from 'src/payments/paystack.service';
 
 @Injectable()
 export class ManagerService {
-  constructor(private prisma: PrismaService,private paystackService:PaystackService) {}
+  constructor(private prisma: PrismaService,private paystackService:PaystackService,private notificationsService: NotificationsService ) {}
 
   // === USER MODERATION ===
   async suspendUser(userId: number, dto: SuspendUserDto, managerId: number) {
@@ -66,9 +67,9 @@ export class ManagerService {
   // === PROPERTY MANAGEMENT ===
   async getPendingProperties() {
     return this.prisma.property.findMany({
-      // where: { 
-      //   status: 'PENDING_VERIFICATION' 
-      // },
+      where: { 
+         status: 'PENDING_VERIFICATION' 
+      },
       include: {
         currentOwner: {
           select: {
@@ -90,8 +91,8 @@ export class ManagerService {
     });
   }
 
-  async approveProperty(propertyId: number, managerId: number) {
-    const property = await this.prisma.property.findUnique({ 
+  async approveProperty(propertyId: number, managerId: number,notes?:string) {
+    try{const property = await this.prisma.property.findUnique({ 
       where: { id: propertyId } 
     });
 
@@ -123,7 +124,11 @@ export class ManagerService {
       }
     });
 
-    return updatedProperty;
+    await this.notificationsService.notifyPropertyApproved(propertyId, managerId, notes);
+
+    return updatedProperty;}catch(e){
+      throw new Error(`Failed to approver property : ${e.message}`)
+    }
   }
 
   async rejectProperty(propertyId: number, dto: ApproveRejectPropertyDto, managerId: number) {
@@ -159,6 +164,8 @@ export class ManagerService {
       }
     });
 
+     await this.notificationsService.notifyPropertyRejected(propertyId, managerId, dto.reason);
+
     return updatedProperty;
   }
 
@@ -176,6 +183,7 @@ export class ManagerService {
       data: {
         status: 'SUSPENDED',
       },
+      
     });
 
 
@@ -189,6 +197,8 @@ export class ManagerService {
         notes: `Property suspended: ${reason}`
       }
     });
+
+     await this.notificationsService.notifyPropertySuspended(propertyId, managerId, reason);
 
     return updatedProperty;
   }
@@ -267,7 +277,7 @@ export class ManagerService {
     // 5. Invalidate cache
     // await this.redisCache.del('manager:escrow_transactions');
     // await this.redisCache.del('manager:dashboard_stats');
-
+    await this.notificationsService.notifyEscrowReleased(transactionId, managerId);
     return updatedTransaction;
 
   } catch (paystackError) {
@@ -442,6 +452,25 @@ export class ManagerService {
     if (!dispute) {
       throw new NotFoundException('Dispute not found');
     }
+
+    // Notify both parties
+    await this.notificationsService.createNotification({
+      userId: dispute.complainantId,
+      type: 'DISPUTE_RESOLVED',
+      title: '✅ Dispute Resolved',
+      message: `Your dispute "${dispute.title}" has been resolved. Resolution: ${resolution}`,
+      relatedDisputeId: disputeId,
+      metadata: { resolution, managerName: 'Property Manager' }
+    });
+
+    await this.notificationsService.createNotification({
+      userId: dispute.respondentId,
+      type: 'DISPUTE_RESOLVED',
+      title: '✅ Dispute Resolved',
+      message: `The dispute "${dispute.title}" against you has been resolved. Resolution: ${resolution}`,
+      relatedDisputeId: disputeId,
+      metadata: { resolution, managerName: 'Property Manager' }
+    });
 
     return this.prisma.dispute.update({
       where: { id: disputeId },

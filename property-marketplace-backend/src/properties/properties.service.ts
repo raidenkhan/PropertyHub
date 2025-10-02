@@ -55,9 +55,9 @@ export class PropertyService {
   /**
    * Find a single property by ID
    */
-  async findOne(id: number) {
+  async findOne(propertyId: string) {
     const property = await this.prisma.property.findUnique({
-      where: { id },
+      where: { propertyId },
       include: {
         currentOwner: {
           select: { id: true, name: true, email: true }
@@ -184,8 +184,8 @@ console.log('Returning property:', property);
       throw new ForbiddenException('You do not have permission to update this property');
     }
     
-    if (property.status === 'LISTED' || property.status === 'VERIFIED') {
-        throw new ForbiddenException('Cannot edit a property that is listed or verified. Please delist it first.');
+    if (property.status === 'LISTED') {
+        throw new ForbiddenException('Cannot edit a property that is listed . Please delist it first.');
     }
     
 

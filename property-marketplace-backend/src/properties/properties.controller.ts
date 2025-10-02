@@ -225,7 +225,7 @@ export class PropertiesController {
    * Get property by ID (public for listed properties)
    */
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id') id: string) {
     console.log('\n\nID received in params:', id);
     try {
       const property = await this.propertyService.findOne(id);

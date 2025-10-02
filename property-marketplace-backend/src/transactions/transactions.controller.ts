@@ -43,6 +43,7 @@ async getTransaction(@Param('id', ParseIntPipe) id: number, @Req() req) {
   }
 }
 
+
   /**
    * Initiate a new transaction (buyer)
    */
@@ -122,22 +123,6 @@ async getTransaction(@Param('id', ParseIntPipe) id: number, @Req() req) {
   /**
    * Release escrow funds (escrow manager/admin)
    */
-  @Patch(':id/release-escrow')
-  @UseGuards(RolesGuard)
-  @Roles('SUPER_ADMIN', 'ADMIN', 'ESCROW_MANAGER')
-  async releaseEscrow(@Param('id', ParseIntPipe) id: number, @Req() req) {
-    try {
-      const transaction = await this.transactionsService.releaseEscrow(id, req.user.userId);
-      
-      return {
-        status: 'success',
-        message: 'Escrow released, transaction completed',
-        data: transaction,
-      };
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
 
   /**
    * Cancel a transaction (buyer, seller, or admin)

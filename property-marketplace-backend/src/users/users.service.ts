@@ -125,28 +125,46 @@ export class UsersService {
   // ... your existing methods (createUser, findAll, findOne, update, remove)
 }
 // Add this to UserService
-async saveBankDetails(userId: number, bankAccountNumber: string, bankCode: string) {
+async saveBankDetails(userId: number, type: 'nuban' | 'mobile_money', accountNumber: string, bankCode: string) {
   // Get user
+  
   const user = await this.prisma.user.findUnique({ where: { id: userId } });
   if (!user) {
     throw new NotFoundException('User not found');
   }
 
+  
+    if (!user.name) {
+        throw new BadRequestException('User must have a name set in their profile before adding payout details.');
+    }
+
   // Create Paystack recipient
   const recipientCode = await this.payStackService.createRecipient({
-    name: user.name || '',
-    email: user.email,
-    phone: user.phone || '',
-    bankAccountNumber,
-    bankCode,
+    name: user.name,
+    type: type,
+    account_number:accountNumber,
+    bank_code:bankCode,
   });
+
+  if (!recipientCode) {
+    throw new BadRequestException('Failed to create payout recipient with Paystack.');
+  }
 
   // Update user
   return this.prisma.user.update({
     where: { id: userId },
      data:{paystackRecipientCode: recipientCode},
+     select: { // Only return non-sensitive data
+        id: true,
+        email: true,
+        name: true,
+        paystackRecipientCode: true,
+      }
   });
 }
+async getBankList() {
+    // Call the new unified method. You can pass a country code if needed.
+    return this.payStackService.listPayoutProviders();
+  }
 
 }
-

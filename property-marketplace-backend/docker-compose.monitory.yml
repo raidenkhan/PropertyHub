@@ -1,0 +1,88 @@
+# docker-compose.monitoring.yml
+version: '3.8' # Using 3.8 for broader compatibility
+
+services:
+  # --- Your Existing Postgres Service ---
+  # You can include it here if you always want to run it with monitoring
+  # Otherwise, run them separately or use `extends` if needed.
+  # postgres:
+  #   image: postgres:15
+  #   # ... (rest of your postgres config)
+  #   # Important: Expose metrics port if using postgres_exporter
+  #   # ports:
+  #   #   - "5432:5432" # Keep your main DB port
+  #   # Consider exposing a separate port for metrics if needed later
+
+  # --- Prometheus (Metrics Collector) ---
+  prometheus:
+    image: prom/prometheus:v2.40.0 # Pin versions for stability
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=1h' # Short retention for dev
+      - '--web.enable-lifecycle' # Allows reload via HTTP
+    # depends_on:
+    #   - postgres # If you include postgres here
+    ports:
+      - "9090:9090" # Access Prometheus UI at http://localhost:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z # Mount your config
+      - prometheus_data:/prometheus # Persistent storage for metrics
+    networks:
+      - monitoring
+
+  # --- Grafana (Visualization Dashboard) ---
+  grafana:
+    image: grafana/grafana-enterprise:9.3.1 # Pin Grafana version
+    container_name: grafana
+    ports:
+      - "3001:3000" # Access Grafana UI at http://localhost:3001 (Avoid 3000 if your backend uses it)
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Change this in production!
+      - GF_USERS_ALLOW_SIGN_UP=false # Disable public signups for dev
+      # - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource # Example plugins
+    volumes:
+      - grafana_data:/var/lib/grafana # Persistent storage for dashboards, users
+    depends_on:
+      - prometheus # Grafana needs Prometheus as a data source
+    networks:
+      - monitoring
+
+  # --- Node Exporter (Optional: Monitor Host Machine) ---
+  # node_exporter:
+  #   image: quay.io/prometheus/node-exporter:v1.5.0
+  #   container_name: node_exporter
+  #   command:
+  #     - '--path.rootfs=/host'
+  #   pid: host
+  #   restart: unless-stopped
+  #   volumes:
+  #     - '/:/host:ro,rslave'
+  #   ports:
+  #     - "9100:9100" # Access Node Exporter metrics at http://localhost:9100/metrics
+
+  # --- Postgres Exporter (Optional: Detailed Postgres Metrics) ---
+  # postgres_exporter:
+  #   image: quay.io/prometheuscommunity/postgres-exporter:v0.12.0
+  #   container_name: postgres_exporter
+  #   environment:
+  #     # Point to your Postgres container/service
+  #     DATA_SOURCE_NAME: "postgresql://admin:secret@postgres:5432/property_marketplace?sslmode=disable"
+  #   ports:
+  #     - "9187:9187" # Access Postgres Exporter metrics at http://localhost:9187/metrics
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  # postgres_data: # Defined in your main compose file

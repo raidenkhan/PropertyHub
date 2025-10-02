@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -20,6 +21,7 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   async refresh(@Body('refreshToken') token: string) {
     return this.authService.refreshToken(token);

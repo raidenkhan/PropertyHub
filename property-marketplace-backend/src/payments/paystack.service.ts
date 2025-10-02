@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
@@ -62,6 +62,7 @@ interface PaystackVerifyResponse {
 
 @Injectable()
 export class PaystackService {
+  private readonly logger = new Logger(PaystackService.name);
   private readonly secretKey: string|undefined;
   private readonly baseUrl = 'https://api.paystack.co';
 
@@ -118,6 +119,29 @@ export class PaystackService {
     }
   }
 
+  /**
+   * List all available payout providers (banks and mobile money) for a country.
+   * @param country - The country code (e.g., 'ghana', 'nigeria')
+   */
+  async listPayoutProviders(country: string = 'ghana') {
+    try {
+      // The `makeRequest` method already handles authorization and base URL.
+      const response = await this.makeRequest(`/bank?country=${country}`, 'GET');
+      // The makeRequest method returns the full Paystack response, so we extract the 'data' property which contains the array.
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Failed to fetch Paystack payout providers for ${country}`, error);
+      throw new BadRequestException(error.message || 'Could not fetch mobile money provider list');
+    }
+  }
+
+
+  // This is the fetch-based implementation you requested
+  // async listBanks() {
+  //   const response = await this.makeRequest('/bank?country=nigeria', 'GET');
+  //   return response.data;
+  // }
+
 
   async verifyTransfer(reference: string) {
   try {
@@ -148,40 +172,35 @@ export class PaystackService {
   }
 }
   /**
-   * Create or update Paystack customer
+   * Create a transfer recipient (bank account or mobile money).
    */
-  async createCustomer(params: {
-    email: string;
-    first_name?: string;
-    last_name?: string;
-    phone?: string;
-    metadata?: any;
-  }) {
+  async createRecipient(dto: any): Promise<string> {
     try {
-      const payload = {
-        email: params.email,
-        first_name: params.first_name || '',
-        last_name: params.last_name || '',
-        phone: params.phone || '',
-        metadata: params.metadata || {},
-      };
       
-      const response = await this.makeRequest('/customer', 'POST', payload);
-    
-      return response;
+      const payload = {
+        type: dto.type,
+        name: dto.name,
+        account_number: dto.account_number,
+        bank_code: dto.bank_code,
+        currency: dto.currency || 'GHS', // Default to GHS, adjust as needed
+      };
+
+      const response = await this.makeRequest('/transferrecipient', 'POST', payload);
+      
+      if (!response.status || !response.data.recipient_code) {
+        throw new Error('Failed to get recipient_code from Paystack');
+      }
+
+      return response.data.recipient_code;
     } catch (error) {
-      // Customer might already exist, try to fetch instead
-      return this.getCustomer(params.email);
+      this.logger.error('Paystack createRecipient error:', error);
+      throw new BadRequestException(error.message || 'Could not create transfer recipient.');
     }
   }
 
-async createRecipient(user: { 
-  name: string; 
-  email: string; 
-  phone: string; 
-  bankAccountNumber: string; 
-  bankCode: string 
-}): Promise<string> {
+  // The old implementation for reference. You can remove this.
+  /*
+  async createRecipient(user: { name: string; email: string; phone: string; bankAccountNumber: string; bankCode: string }): Promise<string> {
   try {
     const response = await fetch(`${this.baseUrl}/transferrecipient`, {
       method: 'POST',
@@ -211,6 +230,35 @@ async createRecipient(user: {
     console.error('Paystack createRecipient error:', error);
     throw error;
   }
+}
+*/
+
+  /**
+   * Create or update Paystack customer
+   */
+  async createCustomer(params: {
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    metadata?: any;
+  }) {
+    try {
+      const payload = {
+        email: params.email,
+        first_name: params.first_name || '',
+        last_name: params.last_name || '',
+        phone: params.phone || '',
+        metadata: params.metadata || {},
+      };
+      
+      const response = await this.makeRequest('/customer', 'POST', payload);
+    
+      return response;
+    } catch (error) {
+      // Customer might already exist, try to fetch instead
+      return this.getCustomer(params.email);
+    }
 }
 async initiateTransfer(dto: {
   amount: number;
