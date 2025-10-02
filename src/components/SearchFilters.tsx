@@ -266,7 +266,7 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
             {/* Search Button */}
             <motion.button
               onClick={handleSearch}
-              className="bg-gradient-to-r from-blue-600 to-violet-600 text-white p-2 rounded-full hover:shadow-lg transition-all duration-200 dark:from-blue-700 dark:to-violet-700 sm:self-center"
+              className="  hidden lg:flex bg-gradient-to-r from-blue-600 to-violet-600 text-white p-2 rounded-full hover:shadow-lg transition-all duration-200 dark:from-blue-700 dark:to-violet-700 sm:self-center"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Search properties"
