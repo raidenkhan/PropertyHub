@@ -5,16 +5,17 @@
  import { User } from './types';
 import { useRouter } from 'next/navigation';
  
- interface AuthContextType {
-   user: User | null;
-   token: string | null;
-   isAuthenticated: boolean;
-   isLoading: boolean;
-   login: (email: string, password: string) => Promise<void>;
-   signup: (email: string, password: string, name: string,phone:string) => Promise<void>;
-   logout: () => Promise<void>;
-   checkUser: () => void;
- }
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email?: string, password?: string, isGoogleAuth?: boolean, accessToken?: string, refreshToken?: string) => Promise<void>;
+  signup: (email: string, password: string, name: string,phone:string) => Promise<void>;
+  logout: () => Promise<void>;
+  checkUser: () => void;
+  loginWithGoogle: () => Promise<void>;
+}
  
  const AuthContext = createContext<AuthContextType | undefined>(undefined);
  export const useAuth = () => {
@@ -48,18 +49,41 @@ import { useRouter } from 'next/navigation';
      checkUser();
    }, []);
  
-   const login = async (email: string, password: string) => {
-     setIsLoading(true);
-     try {
-       await authService.login({ email, password });
-       checkUser();
-     } catch (error) {
-       console.error('Login failed:', error);
-       throw error;
-     } finally {
-       setIsLoading(false);
-     }
-   };
+  const login = async (
+    email?: string, 
+    password?: string, 
+    isGoogleAuth = false,
+    accessToken?: string,
+    refreshToken?: string
+  ) => {
+    setIsLoading(true);
+    try {
+      if (isGoogleAuth && accessToken && refreshToken) {
+        // Handle Google OAuth callback
+        await authService.processGoogleAuth(accessToken, refreshToken);
+      } else if (email && password) {
+        // Handle regular email/password login
+        await authService.login({ email, password });
+      } else {
+        throw new Error('Invalid login parameters');
+      }
+      checkUser();
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      await authService.loginWithGoogle();
+    } catch (error) {
+      console.error('Google login failed:', error);
+      throw error;
+    }
+  };
  
    const signup = async (email: string, password: string, name: string) => {
      setIsLoading(true);
@@ -88,16 +112,17 @@ import { useRouter } from 'next/navigation';
      }
    };
  
-   const value = {
-     user,
-     token,
-     isAuthenticated: !!user && !!token,
-     isLoading,
-     login,
-     signup,
-     logout,
-     checkUser,
-   };
+  const value = {
+    user,
+    token,
+    isAuthenticated: !!user && !!token,
+    isLoading,
+    login,
+    signup,
+    logout,
+    checkUser,
+    loginWithGoogle,
+  };
  
    return (
      <AuthContext.Provider value={value}>

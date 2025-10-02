@@ -1,5 +1,6 @@
 // lib/api/adminService.ts
 import { getAuthHeader } from '../auth/authservice';
+import { BACKEND_BASE_URL } from '../constants/api';
 
 interface CreateManagerDto {
   email: string;
@@ -9,7 +10,7 @@ interface CreateManagerDto {
 }
 
 class AdminService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  private baseUrl = BACKEND_BASE_URL || 'http://localhost:3000';
 
   async createManager(dto: CreateManagerDto): Promise<any> {
     const response = await fetch(`${this.baseUrl}/admin/create-manager`, {

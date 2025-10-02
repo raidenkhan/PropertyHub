@@ -306,6 +306,60 @@ class AuthService {
   hasAnyRole(roles: string[]): boolean {
     return this.user?.roles?.some(r => roles.includes(r)) || false;
   }
+
+  // ✅ Google OAuth methods
+  async loginWithGoogle(): Promise<void> {
+    const backendUrl = BACKEND_BASE_URL || 'http://localhost:3001';
+    window.location.href = `${backendUrl}/auth/google`;
+  }
+
+  // ✅ Process Google auth callback with tokens
+  async processGoogleAuth(accessToken: string, refreshToken: string): Promise<AuthResponse> {
+    try {
+      // Set tokens first
+      this.setTokens(accessToken, refreshToken);
+
+      // Get user data using the access token
+      const response = await this.authenticatedFetch(`${BACKEND_BASE_URL}/auth/me`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to get user data after Google auth');
+      }
+
+      const userData = await response.json();
+      const validatedUser = validateUser(userData);
+      this.setUser(validatedUser);
+
+      return {
+        accessToken,
+        refreshToken,
+        user: validatedUser
+      };
+    } catch (error) {
+      console.error('Google auth processing error:', error);
+      this.clearAuth();
+      throw error;
+    }
+  }
+
+  // ✅ Alternative method if backend provides user data directly in callback
+  async processGoogleAuthWithUser(accessToken: string, refreshToken: string, userData: any): Promise<AuthResponse> {
+    try {
+      const validatedUser = validateUser(userData);
+      this.setTokens(accessToken, refreshToken);
+      this.setUser(validatedUser);
+
+      return {
+        accessToken,
+        refreshToken,
+        user: validatedUser
+      };
+    } catch (error) {
+      console.error('Google auth with user processing error:', error);
+      this.clearAuth();
+      throw error;
+    }
+  }
   
 }
 

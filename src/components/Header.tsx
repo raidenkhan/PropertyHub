@@ -372,72 +372,72 @@ export function Header() {
           </div>
         </div>
 
-          {/* Mobile Search Overlay */}
-          <AnimatePresence>
-            {isSearchOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="md:hidden bg-background/98 backdrop-blur-md border-t border-border"
-              >
-                <div className="px-3 py-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input
-                      placeholder="Search properties, locations..."
-                      className="pl-10 pr-12 py-3 bg-background border-input focus:border-ring focus:ring-2 focus:ring-ring/20 text-base"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          router.push('/properties');
-                          setIsSearchOpen(false);
-                        }
-                        if (e.key === 'Escape') {
-                          setIsSearchOpen(false);
-                        }
-                      }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-                      onClick={() => setIsSearchOpen(false)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  {/* Quick Search Actions */}
-                  <div className="flex gap-2 mt-3">
-                    <Button 
-                      size="sm" 
-                      className="flex-1 bg-primary hover:bg-primary/90"
-                      onClick={() => {
+        {/* Mobile Search Overlay */}
+        <AnimatePresence>
+          {isSearchOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="md:hidden bg-background/98 backdrop-blur-md border-t border-border"
+            >
+              <div className="px-3 py-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Search properties, locations..."
+                    className="pl-10 pr-12 py-3 bg-background border-input focus:border-ring focus:ring-2 focus:ring-ring/20 text-base"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
                         router.push('/properties');
                         setIsSearchOpen(false);
-                      }}
-                    >
-                      <Search className="w-4 h-4 mr-2" />
-                      Search All
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="px-3"
-                      onClick={() => {
-                        router.push('/properties?filters=true');
+                      }
+                      if (e.key === 'Escape') {
                         setIsSearchOpen(false);
-                      }}
-                    >
-                      <Filter className="w-4 h-4" />
-                    </Button>
-                  </div>
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                    onClick={() => setIsSearchOpen(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                
+                {/* Quick Search Actions */}
+                <div className="flex gap-2 mt-3">
+                  <Button 
+                    size="sm" 
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                    onClick={() => {
+                      router.push('/properties');
+                      setIsSearchOpen(false);
+                    }}
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Search All
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="px-3"
+                    onClick={() => {
+                      router.push('/properties?filters=true');
+                      setIsSearchOpen(false);
+                    }}
+                  >
+                    <Filter className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Modern Mobile Sliding Menu */}
         <AnimatePresence>

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Header } from '@/components/Header';
 import { AnimatedBackground } from '@/components/animated-background';
-import { handleGoogleAuth } from '@/lib/googleAuth';
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 import { useAuth } from '@/lib/auth/authContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -31,7 +31,7 @@ export default function AuthPage() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
   // ✅ Get user from auth context
-  const { login, signup, isLoading, user } = useAuth();
+  const { login, signup, isLoading, user, loginWithGoogle } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -82,16 +82,6 @@ export default function AuthPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleAuth = async () => {
-    handleGoogleAuth();
-    setLoading(true);
-    // The actual handling will be done in the auth context after redirect
-  };
-
-  // const handleGoogleCallback = async (tokens: { accessToken: string, user: any }) => {
-  //   // This would be handled by your Google auth flow
-  //   router.push(tokens.user.redirectPath);
-  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -476,6 +466,25 @@ export default function AuthPage() {
                     </div>
                   )}
                 </form>
+                
+                {/* Divider */}
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200 dark:border-gray-600" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Google Auth Button */}
+                <GoogleAuthButton 
+                  mode={isLogin ? 'signin' : 'signup'}
+                  disabled={isLoading}
+                  className="mb-4"
+                />
               </div>
             </div>
           </div>
