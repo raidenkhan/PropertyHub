@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Home, DollarSign, MessageSquare, AlertTriangle, Users, Eye, CheckCircle, XCircle, ArrowUp, AlertCircle, Search } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Home, DollarSign, MessageSquare, AlertTriangle, Users,  CheckCircle, XCircle, ArrowUp, AlertCircle, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth/authContext";
 import { AnimatedBackground } from "@/components/animated-background";
 import { Input } from "@/components/ui/input";
@@ -193,7 +193,8 @@ useEffect(() => {
       setPendingProperties(prev => prev.filter(p => p.id !== selectedProperty.id));
       setShowApproveModal(false);
       setNotes("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if(error instanceof Error)
       toast({
         title: "❌ Approval Failed",
         description: error.message,
@@ -218,7 +219,8 @@ useEffect(() => {
       setPendingProperties(prev => prev.filter(p => p.id !== selectedProperty.id));
       setShowRejectModal(false);
       setNotes("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if(error instanceof Error)
       toast({
         title: "❌ Rejection Failed",
         description: error.message,
@@ -243,7 +245,8 @@ useEffect(() => {
       setPendingProperties(prev => prev.filter(p => p.id !== selectedProperty.id));
       setShowSuspendModal(false);
       setReason("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if(error instanceof Error)
       toast({
         title: "❌ Suspension Failed",
         description: error.message,
@@ -268,7 +271,8 @@ useEffect(() => {
       setEscrowTransactions(prev => prev.filter(t => t.id !== selectedTransaction.id));
       setShowReleaseModal(false);
       setNotes("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if(error instanceof Error)
       toast({
         title: "❌ Release Failed",
         description: error.message,
@@ -304,7 +308,8 @@ useEffect(() => {
       setDisputes(prev => prev.filter(d => d.id !== selectedDispute.id));
       setShowResolveModal(false);
       setResolution("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if(error instanceof Error)
       toast({
         title: "❌ Resolution Failed",
         description: error.message,
@@ -329,7 +334,8 @@ useEffect(() => {
       setDisputes(prev => prev.filter(d => d.id !== selectedDispute.id));
       setShowEscalateModal(false);
       setReason("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if(error instanceof Error)
       toast({
         title: "❌ Escalation Failed",
         description: error.message,
@@ -360,7 +366,8 @@ useEffect(() => {
       // In real app, update user list
       setShowSuspendUserModal(false);
       setReason("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if(error instanceof Error)
       toast({
         title: "❌ Suspension Failed",
         description: error.message,
@@ -874,7 +881,7 @@ useEffect(() => {
               <DialogTitle>Approve Property</DialogTitle>
             </DialogHeader>
             <div>
-              <p className="mb-4">Are you sure you want to approve "<span className="font-medium">{selectedProperty?.title}</span>"?</p>
+              <p className="mb-4">Are you sure you want to approve &quot<span className="font-medium">{selectedProperty?.title}</span>&quot?</p>
               <Label>Notes (Optional)</Label>
               <Textarea
                 placeholder="Add approval notes..."
@@ -897,39 +904,83 @@ useEffect(() => {
               <DialogTitle>Reject Property</DialogTitle>
             </DialogHeader>
             <div>
-              <p className="mb-4">Are you sure you want to reject "<span className="font-medium">{selectedProperty?.title}</span>"?</p>
-              <Label>Rejection Reason *</Label>
-              <Textarea
-                placeholder="Explain why this property is being rejected..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="mt-2"
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRejectModal(false)}>Cancel</Button>
-              <Button onClick={confirmReject} variant="destructive">Reject Property</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            {/* Reject Property Modal */}
+<p className="mb-4">
+  Are you sure you want to reject &quot;<span className="font-medium">{selectedProperty?.title}</span>&quot;?
+</p>
+<Label>Rejection Reason *</Label>
+<Textarea
+  placeholder="Explain why this property is being rejected..."
+  value={notes}
+  onChange={(e) => setNotes(e.target.value)}
+  className="mt-2"
+  required
+/>
 
-        {/* Suspend Property Modal */}
-        <Dialog open={showSuspendModal} onOpenChange={setShowSuspendModal}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Suspend Property</DialogTitle>
-            </DialogHeader>
-            <div>
-              <p className="mb-4">Are you sure you want to suspend "<span className="font-medium">{selectedProperty?.title}</span>"?</p>
-              <Label>Suspension Reason *</Label>
-              <Textarea
-                placeholder="Explain why this property is being suspended..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="mt-2"
-                required
-              />
+{/* Suspend Property Modal */}
+<p className="mb-4">
+  Are you sure you want to suspend &quot;<span className="font-medium">{selectedProperty?.title}</span>&quot;?
+</p>
+<Label>Suspension Reason *</Label>
+<Textarea
+  placeholder="Explain why this property is being suspended..."
+  value={reason}
+  onChange={(e) => setReason(e.target.value)}
+  className="mt-2"
+  required
+/>
+
+{/* Release Escrow Modal */}
+<p className="mb-4">
+  Release ₦{selectedTransaction?.amount.toLocaleString()} to seller &quot;<span className="font-medium">{selectedTransaction?.seller.name}</span>&quot; for property &quot;<span className="font-medium">{selectedTransaction?.property.title}</span>&quot;?
+</p>
+<Label>Notes (Optional)</Label>
+<Textarea
+  placeholder="Add release notes..."
+  value={notes}
+  onChange={(e) => setNotes(e.target.value)}
+  className="mt-2"
+/>
+
+{/* Resolve Dispute Modal */}
+<p className="mb-4">
+  Resolve dispute &quot;<span className="font-medium">{selectedDispute?.title}</span>&quot;?
+</p>
+<Label>Resolution Details *</Label>
+<Textarea
+  placeholder="Describe how this dispute was resolved..."
+  value={resolution}
+  onChange={(e) => setResolution(e.target.value)}
+  className="mt-2"
+  required
+/>
+
+{/* Escalate Dispute Modal */}
+<p className="mb-4">
+  Escalate dispute &quot;<span className="font-medium">{selectedDispute?.title}</span>&quot; to Admin?
+</p>
+<Label>Escalation Reason *</Label>
+<Textarea
+  placeholder="Explain why this dispute needs admin intervention..."
+  value={reason}
+  onChange={(e) => setReason(e.target.value)}
+  className="mt-2"
+  required
+/>
+
+{/* Suspend User Modal */}
+<p className="mb-4">
+  Suspend user &quot;<span className="font-medium">{selectedUser?.name}</span>&quot;?
+</p>
+<Label>Suspension Reason *</Label>
+<Textarea
+  placeholder="Explain why this user is being suspended..."
+  value={reason}
+  onChange={(e) => setReason(e.target.value)}
+  className="mt-2"
+  required
+/>
+
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowSuspendModal(false)}>Cancel</Button>
@@ -945,7 +996,7 @@ useEffect(() => {
               <DialogTitle>Release Escrow</DialogTitle>
             </DialogHeader>
             <div>
-              <p className="mb-4">Release ₦{selectedTransaction?.amount.toLocaleString()} to seller "<span className="font-medium">{selectedTransaction?.seller.name}</span>" for property "<span className="font-medium">{selectedTransaction?.property.title}</span>"?</p>
+              <p className="mb-4">Release ₦{selectedTransaction?.amount.toLocaleString()} to seller &quot<span className="font-medium">{selectedTransaction?.seller.name}</span>&quote for property "<span className="font-medium">{selectedTransaction?.property.title}</span>"?</p>
               <Label>Notes (Optional)</Label>
               <Textarea
                 placeholder="Add release notes..."
@@ -968,7 +1019,7 @@ useEffect(() => {
               <DialogTitle>Resolve Dispute</DialogTitle>
             </DialogHeader>
             <div>
-              <p className="mb-4">Resolve dispute "<span className="font-medium">{selectedDispute?.title}</span>"?</p>
+              <p className="mb-4">Resolve dispute &quot<span className="font-medium">{selectedDispute?.title}</span>?</p>
               <Label>Resolution Details *</Label>
               <Textarea
                 placeholder="Describe how this dispute was resolved..."
@@ -992,7 +1043,7 @@ useEffect(() => {
               <DialogTitle>Escalate Dispute</DialogTitle>
             </DialogHeader>
             <div>
-              <p className="mb-4">Escalate dispute "<span className="font-medium">{selectedDispute?.title}</span>" to Admin?</p>
+              <p className="mb-4">Escalate dispute &quot<span className="font-medium">{selectedDispute?.title}</span>&quote to Admin?</p>
               <Label>Escalation Reason *</Label>
               <Textarea
                 placeholder="Explain why this dispute needs admin intervention..."
@@ -1016,7 +1067,7 @@ useEffect(() => {
               <DialogTitle>Suspend User</DialogTitle>
             </DialogHeader>
             <div>
-              <p className="mb-4">Suspend user "<span className="font-medium">{selectedUser?.name}</span>"?</p>
+              <p className="mb-4">Suspend user &quot<span className="font-medium">{selectedUser?.name}</span>&quot?</p>
               <Label>Suspension Reason *</Label>
               <Textarea
                 placeholder="Explain why this user is being suspended..."

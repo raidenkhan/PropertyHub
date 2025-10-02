@@ -49,8 +49,8 @@ class ChatService {
         auth: {
           token,
         },
-        transports: ['websocket', 'polling'], // Fallback options
-        timeout: 10000,
+        transports: ['websocket'], // Fallback options
+        //timeout: 10000,
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
@@ -73,11 +73,11 @@ class ChatService {
       this.reconnectAttempts = 0;
     });
 
-    this.socket.on('disconnect', (reason: any) => {
+    this.socket.on('disconnect', (reason: string) => {
       console.log('Disconnected from chat service:', reason);
     });
 
-    this.socket.on('connect_error', (error: any) => {
+    this.socket.on('connect_error', (error: unknown) => {
       console.error('Connection error:', error);
       this.reconnectAttempts++;
       
@@ -86,7 +86,7 @@ class ChatService {
       }
     });
 
-    this.socket.on('error', (error: any) => {
+    this.socket.on('error', (error: string) => {
       console.error('Socket error:', error);
     });
   }

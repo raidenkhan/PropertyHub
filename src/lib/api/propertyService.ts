@@ -1,5 +1,5 @@
 // lib/api/propertyService.ts
-import { getAuthHeader } from '../auth/authservice';
+import { authService, getAuthHeader } from '../auth/authservice';
 import { BACKEND_BASE_URL } from '../constants/api';
 import { Property } from './managerService';
 
@@ -41,12 +41,10 @@ class PropertyService {
 
   // ✅ NEW: For file uploads
   async createPropertyWithFiles(formData: FormData): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/properties`, {
+    console.log("Sending ...")
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties`, {
       method: 'POST',
-      headers: {
-        ...getAuthHeader(),
-      
-      },
+   
       body: formData,
     });
 
@@ -135,12 +133,10 @@ async getMyProperties(params?: { status?: string; page?: number; limit?: number 
     return response.json();
   }
 
-  async getPropertyById(propertyId: number): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/properties/${propertyId}`, {
+  async getPropertyById(propertyId: string): Promise<any> {
+    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties/${propertyId}`, {
       method: 'GET',
-      headers: {
-        ...getAuthHeader(),
-      },
+   
     });
 
     if (!response.ok) {

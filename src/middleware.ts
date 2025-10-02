@@ -6,7 +6,8 @@ import type { User } from './lib/auth/types';
 // 1. Define the routes you want to protect.
 const baseProtectedRoutes = [
   '/messages',
-  '/dashboard'
+  '/dashboard',
+  '/host/properties/new'
 ];
 
 // Define routes that require specific roles

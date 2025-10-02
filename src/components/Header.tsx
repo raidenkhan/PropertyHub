@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "./ui/badge";
 import { messagesService } from '@/lib/api/messageService';
 import { chatService } from "@/lib/api/chatService";
+import { NotificationBell } from "@/components/NotificationBell";
 
 
 export function Header() {
@@ -231,18 +232,9 @@ export function Header() {
                 </Button>
 
                 {/* Notifications */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="hidden sm:flex flex-col items-center gap-1 hover:bg-accent relative md:flex-row md:gap-2"
-                  onClick={() => router.push('/notifications')}
-                >
-                  <div className="flex flex-col items-center gap-1  ">
-                    <Bell className="w-4 h-4" />
-                    <span>Alerts</span>
-                  </div>
-                 
-                </Button>
+                <div className="hidden sm:block">
+                  <NotificationBell />
+                </div>
               </>
             )}
 

@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/Header"
 import { SearchFilters, FilterOptions } from "@/components/SearchFilters"
@@ -8,10 +8,13 @@ import { PropertyMap } from "@/app/property-map"
 import { TypingAnimation } from "@/components/typing-animation"
 import { AnimatedBackground } from "@/components/animated-background"
 import { motion } from "framer-motion"
-import { MapPin, TrendingUp, Clock, Star } from "lucide-react"
+import { MapPin, TrendingUp, Clock, Star, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PropertyCard } from "@/components/PropertyCard"
+import { propertyService } from "@/lib/api/propertyService"
+import { convertPropertyData, groupPropertiesByLocationClusters } from "@/lib/utils"
+import { UnsortedPropertiesView } from "@/components/UnsortedPropertiesView"
 
 interface Property {
   id: string
@@ -28,6 +31,12 @@ interface Property {
   image: string
   isLiked?: boolean
   coordinates: { lat: number; lng: number }
+  description?: string
+  amenities?: string[]
+  currentOwner?: {
+    id: number
+    name: string
+  }
 }
 
 interface LocationCategory {
@@ -41,143 +50,20 @@ interface LocationCategory {
   properties: Property[]
 }
 
-const locationCategories: LocationCategory[] = [
-  {
-    id: "lagos-vi",
-    title: "Popular homes in Victoria Island",
-    location: "Victoria Island, Lagos",
-    count: 1200,
-    popular: true,
-    properties: [
-      {
-        id: "1",
-        title: "Modern 3BR Apartment in Victoria Island",
-        location: "Victoria Island, Lagos",
-        price: "₦2,500,000",
-        type: "Apartment",
-        status: "Available",
-        bedrooms: 3,
-        bathrooms: 2,
-        area: "120sqm",
-        rating: 4.8,
-        reviews: 24,
-        image:
-          "https://images.unsplash.com/photo-1515263487990-61b07816b324?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBidWlsZGluZ3xlbnwxfHx8fDE3NTc0Nzk2MDR8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        isLiked: false,
-        coordinates: { lat: 6.4281, lng: 3.4219 },
-      },
-      {
-        id: "4",
-        title: "Executive Office Space in VI",
-        location: "Victoria Island, Lagos",
-        price: "₦3,500,000",
-        type: "Office",
-        status: "Rent",
-        area: "200sqm",
-        rating: 4.7,
-        reviews: 15,
-        image:
-          "https://images.unsplash.com/photo-1637095937545-7d8c1edf4d2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvZmZpY2UlMjBzcGFjZSUyMGludGVyaW9yfGVufDF8fHx8MTc1NzU1MDU3OXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        isLiked: false,
-        coordinates: { lat: 6.4281, lng: 3.4219 },
-      },
-    ],
-  },
-  {
-    id: "lagos-lekki",
-    title: "Trending in Lekki Phase 1",
-    location: "Lekki Phase 1, Lagos",
-    count: 850,
-    trending: true,
-    properties: [
-      {
-        id: "3",
-        title: "Luxury 5BR Detached House in Lekki",
-        location: "Lekki Phase 1, Lagos",
-        price: "₦45,000,000",
-        type: "House",
-        status: "Available",
-        bedrooms: 5,
-        bathrooms: 4,
-        area: "350sqm",
-        rating: 4.9,
-        reviews: 31,
-        image:
-          "https://images.unsplash.com/photo-1675529734325-f735f7a25121?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBkZXRhY2hlZCUyMGhvdXNlfGVufDF8fHx8MTc1NzU1MDU3N3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        isLiked: false,
-        coordinates: { lat: 6.4433, lng: 3.5244 },
-      },
-      {
-        id: "6",
-        title: "Beautiful 2BR Apartment with Pool",
-        location: "Ikoyi, Lagos",
-        price: "₦8,500,000",
-        type: "Apartment",
-        status: "Rent",
-        bedrooms: 2,
-        bathrooms: 2,
-        area: "95sqm",
-        rating: 4.8,
-        reviews: 22,
-        image:
-          "https://images.unsplash.com/photo-1564078516393-cf04bd966897?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBob3VzZSUyMGludGVyaW9yfGVufDF8fHx8MTc1NzU1MDU3Mnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        isLiked: false,
-        coordinates: { lat: 6.4285, lng: 3.4215 },
-      },
-    ],
-  },
-  {
-    id: "abuja-maitama",
-    title: "Available next month in Maitama",
-    location: "Maitama, Abuja",
-    count: 320,
-    recent: true,
-    properties: [
-      {
-        id: "5",
-        title: "Premium Land Plot in Abuja",
-        location: "Maitama, Abuja",
-        price: "₦25,000,000",
-        type: "Land",
-        status: "Available",
-        area: "1000sqm",
-        rating: 4.5,
-        reviews: 8,
-        image:
-          "https://images.unsplash.com/photo-1601622962666-d0b6d43a7ac7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYW5kJTIwcGxvdCUyMHByb3BlcnR5fGVufDF8fHx8MTc1NzU1MDU4Mnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        isLiked: true,
-        coordinates: { lat: 9.0578, lng: 7.4951 },
-      },
-      {
-        id: "2",
-        title: "Prime Commercial Shop Space in Ikeja",
-        location: "Ikeja, Lagos",
-        price: "₦1,200,000",
-        type: "Commercial",
-        status: "Rent",
-        area: "85sqm",
-        rating: 4.6,
-        reviews: 18,
-        image:
-          "https://images.unsplash.com/photo-1541558869434-2840d308329a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb21tZXJjaWFsJTIwb2ZmaWNlJTIwc3BhY2V8ZW58MXx8fHwxNzU3NTQ0MTk2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-        isLiked: true,
-        coordinates: { lat: 6.6018, lng: 3.3515 },
-      },
-    ],
-  },
-]
-
 // Helper function to parse price string to number for comparison
 const parsePriceToNumber = (price: string): number => {
-  const numericValue = price.replace(/[₦,]/g, '').replace(/[KMB]/g, (match) => {
-    switch (match) {
-      case 'K': return '000'
-      case 'M': return '000000'
-      case 'B': return '000000000'
-      default: return ''
-    }
-  })
-  return parseInt(numericValue) || 0
+  // Handle both ₦2.5M format and ₦2,500,000 format
+  const numericString = price.replace(/[₦,]/g, '')
+  
+  if (numericString.includes('M')) {
+    return parseFloat(numericString.replace('M', '')) * 1000000
+  } else if (numericString.includes('K')) {
+    return parseFloat(numericString.replace('K', '')) * 1000
+  } else if (numericString.includes('B')) {
+    return parseFloat(numericString.replace('B', '')) * 1000000000
+  }
+  
+  return parseInt(numericString) || 0
 }
 
 // Filter function
@@ -227,11 +113,17 @@ function LocationCategories({
   onLike,
   viewMode,
   filters,
+  categories,
+  loading,
+  error,
 }: {
   onCategorySelect: (category: LocationCategory) => void
   onLike: (id: string) => void
   viewMode: "grid" | "list"
   filters: FilterOptions
+  categories: LocationCategory[]
+  loading: boolean
+  error: string | null
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const router = useRouter()
@@ -245,9 +137,54 @@ function LocationCategories({
     router.push(`/map?category=${encodeURIComponent(category.title)}`)
   }
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-12 px-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="flex items-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <p className="text-lg text-foreground dark:text-white">Loading properties...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-12 px-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <p className="text-lg text-red-600 dark:text-red-400 mb-4">
+              Failed to load properties: {error}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // No categories found
+  if (!categories || categories.length === 0) {
+    return (
+      <div className="space-y-12 px-6">
+        <div className="flex items-center justify-center py-20">
+          <p className="text-lg text-muted-foreground dark:text-gray-400">
+            No properties found. Check back later!
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-12 px-6">
-      {locationCategories.map((category, index) => {
+      {categories.map((category, index) => {
         // Filter properties in this category based on current filters
         const filteredProperties = filterProperties(category.properties, filters)
         
@@ -309,7 +246,7 @@ function LocationCategories({
               <MapPin className="w-4 h-4 dark:text-gray-300" />
               <span>
                 {filteredProperties.length === category.properties.length 
-                  ? `Over ${category.count.toLocaleString()} homes in ${category.location}`
+                  ? `${category.count.toLocaleString()} homes in ${category.location}`
                   : `${filteredProperties.length} of ${category.properties.length} homes shown in ${category.location}`
                 }
               </span>
@@ -350,10 +287,10 @@ function LocationCategories({
 
 export default function App() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [properties, setProperties] = useState<Property[]>(locationCategories.flatMap((cat) => cat.properties))
   const [showMap, setShowMap] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showCategories, setShowCategories] = useState(true)
+  const [locationSortingEnabled, setLocationSortingEnabled] = useState(false) // Default to unsorted
   const [filters, setFilters] = useState<FilterOptions>({
     location: "",
     propertyType: "",
@@ -361,10 +298,56 @@ export default function App() {
     bedrooms: "",
   })
 
+  // State for API data
+  const [categories, setCategories] = useState<LocationCategory[]>([])
+  const [clusteredCategories, setClusteredCategories] = useState<LocationCategory[]>([])
+  const [allProperties, setAllProperties] = useState<Property[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch and convert data on component mount
+  useEffect(() => {
+    const fetchPropertyData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // Fetch data from your API
+        const response = await propertyService.getAllProperties()
+        const apiData = response.data
+        
+        console.log('Raw API data:', apiData)
+        
+        // Convert mixed data format to unified structure
+        const { categories: convertedCategories, allProperties: convertedProperties } = 
+          convertPropertyData(apiData)
+        
+        console.log('Converted categories:', convertedCategories)
+        console.log('Converted properties:', convertedProperties)
+        
+        setCategories(convertedCategories)
+        setAllProperties(convertedProperties)
+        
+        // Generate clustered categories for location-based sorting
+        const clustered = groupPropertiesByLocationClusters(convertedProperties)
+        setClusteredCategories(clustered)
+        
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch properties'
+        setError(errorMessage)
+        console.error('Property data fetch error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPropertyData()
+  }, [])
+
   // Memoized filtered properties
   const filteredProperties = useMemo(() => {
-    return filterProperties(properties, filters)
-  }, [properties, filters])
+    return filterProperties(allProperties, filters)
+  }, [allProperties, filters])
 
   // Handle filter changes
   const handleFiltersChange = useCallback((newFilters: FilterOptions) => {
@@ -372,16 +355,24 @@ export default function App() {
   }, [])
 
   const handleLike = (id: string) => {
-    setProperties((prev) =>
+    setAllProperties((prev) =>
       prev.map((property) => (property.id === id ? { ...property, isLiked: !property.isLiked } : property))
+    )
+    
+    // Also update in categories
+    setCategories((prev) =>
+      prev.map((category) => ({
+        ...category,
+        properties: category.properties.map((property) =>
+          property.id === id ? { ...property, isLiked: !property.isLiked } : property
+        ),
+      }))
     )
   }
 
   const handleCategorySelect = (category: LocationCategory) => {
     setSelectedCategory(category.id)
     setShowCategories(false)
-    // Optionally, filter properties for the selected category
-    // setProperties(category.properties)
   }
 
   const handleCloseMap = () => {
@@ -395,10 +386,14 @@ export default function App() {
 
   // Count total filtered properties across all categories
   const totalFilteredCount = useMemo(() => {
-    return locationCategories.reduce((total, category) => {
-      return total + filterProperties(category.properties, filters).length
-    }, 0)
-  }, [filters])
+    if (loading) return 0
+    if (locationSortingEnabled && clusteredCategories) {
+      return clusteredCategories.reduce((total, category) => {
+        return total + filterProperties(category.properties, filters).length
+      }, 0)
+    }
+    return filteredProperties.length
+  }, [locationSortingEnabled, clusteredCategories, filteredProperties, filters, loading])
 
   return (
     <div className="min-h-screen relative bg-background dark:bg-gray-900">
@@ -449,8 +444,8 @@ export default function App() {
             transition={{ duration: 0.6, delay: 2 }}
           >
             {[
-              { number: "10,000+", label: "Properties", delay: 0 },
-              { number: "50+", label: "Cities", delay: 0.1 },
+              { number: loading ? "..." : `${allProperties.length}+`, label: "Properties", delay: 0 },
+              { number: loading ? "..." : `${locationSortingEnabled ? clusteredCategories.length : categories.length}+`, label: "Locations", delay: 0.1 },
               { number: "5,000+", label: "Happy Clients", delay: 0.2 },
               { number: "4.9", label: "Average Rating", delay: 0.3 },
             ].map((stat, index) => (
@@ -475,7 +470,7 @@ export default function App() {
       </motion.div>
 
       {/* Results Count */}
-      {(filters.location || filters.propertyType || filters.priceRange || filters.bedrooms) && (
+      {!loading && (filters.location || filters.propertyType || filters.priceRange || filters.bedrooms) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -492,21 +487,65 @@ export default function App() {
         </motion.div>
       )}
 
+      {/* Location Sorting Toggle */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-7xl mx-auto px-6 pb-6"
+      >
+        <div className="flex items-center justify-center">
+          <Button
+            onClick={() => setLocationSortingEnabled(!locationSortingEnabled)}
+            variant={locationSortingEnabled ? "default" : "outline"}
+            className={`flex items-center gap-2 px-6 py-3 transition-all duration-300 ${
+              locationSortingEnabled 
+                ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                : "bg-background hover:bg-accent dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
+            }`}
+            aria-label={`${locationSortingEnabled ? 'Disable' : 'Enable'} location-based sorting`}
+          >
+            <MapPin className="w-4 h-4" />
+            {locationSortingEnabled ? "View All Properties" : "Group by Location"}
+          </Button>
+        </div>
+      </motion.div>
+
       {/* Properties Section */}
       {showCategories ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="max-w-7xl mx-auto px-6 py-12"
-        >
-          <LocationCategories 
-            onCategorySelect={handleCategorySelect} 
-            onLike={handleLike} 
-            viewMode={viewMode}
-            filters={filters}
-          />
-        </motion.div>
+        locationSortingEnabled ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="max-w-7xl mx-auto px-6 py-12"
+          >
+            <LocationCategories 
+              onCategorySelect={handleCategorySelect} 
+              onLike={handleLike} 
+              viewMode={viewMode}
+              filters={filters}
+              categories={clusteredCategories}
+              loading={loading}
+              error={error}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="max-w-7xl mx-auto py-12"
+          >
+            <UnsortedPropertiesView
+              properties={filteredProperties}
+              onLike={handleLike}
+              viewMode={viewMode}
+              loading={loading}
+              error={error}
+            />
+          </motion.div>
+        )
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.6 }}>
           <div className="max-w-7xl mx-auto px-6 py-6">

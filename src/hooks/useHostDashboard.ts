@@ -1,36 +1,36 @@
 // hooks/useHostDashboard.ts
 import { useState, useEffect, useCallback } from 'react';
-import { hostDashboardService } from '@/lib/api/hostDashBoardService';
+import { hostDashboardService,Property } from '@/lib/api/hostDashBoardService';
 import { toast } from '@/hooks/use-toast';
 
-export interface Property {
-  id: number;
-  propertyId: string;
-  title: string;
-  description: string;
-  price: number;
-  type: "SELL" | "RENT" | "LEASE" | "STAY";
-  status: "DRAFT" | "PENDING_VERIFICATION" | "VERIFIED" | "LISTED" | "SOLD" | "REJECTED" | "SUSPENDED";
-  location: string;
-  coordinates?: { lat: number; lng: number };
-  images: string[];
-  amenities: string[];
-  specifications?: Record<string, any>;
-  bedrooms?: number;
-  bathrooms?: number;
-  area?: number;
-  currentOwnerId: number;
-  listedById?: number;
-  isVerified: boolean;
-  verifiedById?: number;
-  verifiedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  listedAt?: string;
-  soldAt?: string;
-  currentOwner?: { name: string; email: string };
-  listedBy?: { name: string; email: string };
-}
+// export interface Property {
+//   id: number;
+//   propertyId: string;
+//   title: string;
+//   description: string;
+//   price: number;
+//   type: "SELL" | "RENT" | "LEASE" | "STAY";
+//   status: "DRAFT" | "PENDING_VERIFICATION" | "VERIFIED" | "LISTED" | "SOLD" | "REJECTED" | "SUSPENDED";
+//   location: string;
+//   coordinates?: { lat: number; lng: number };
+//   images: string[];
+//   amenities: string[];
+//   specifications?: Record<string, any>;
+//   bedrooms?: number;
+//   bathrooms?: number;
+//   area?: number;
+//   currentOwnerId: number;
+//   listedById?: number;
+//   isVerified: boolean;
+//   verifiedById?: number;
+//   verifiedAt?: string;
+//   createdAt: string;
+//   updatedAt: string;
+//   listedAt?: string;
+//   soldAt?: string;
+//   currentOwner?: { name: string; email: string };
+//   listedBy?: { name: string; email: string };
+// }
 
 export interface DashboardStats {
   totalProperties: number;
@@ -71,7 +71,7 @@ export const useHostDashboard = () => {
       soldProperties: properties.filter(p => p.status === "SOLD").length,
       pendingVerification: properties.filter(p => p.status === "PENDING_VERIFICATION").length,
       draftProperties: properties.filter(p => p.status === "DRAFT").length,
-      rejectedProperties: properties.filter(p => p.status === "REJECTED").length,
+      rejectedProperties: properties.filter(p => p.status === "SUSPENDED").length,
       totalInquiries: 0, // This would come from a separate inquiry count API
       unreadMessages: 0, // This would come from messages API
       totalRevenue: 0, // This would come from transactions API
@@ -123,7 +123,7 @@ export const useHostDashboard = () => {
       setLoading(true);
       setError(null);
       const response = await hostDashboardService.getMyProperties({ status });
-      const propertiesData = response.properties || response.data || response;
+      const propertiesData = response.data || response;
       setProperties(propertiesData);
       const computed = calculateStats(propertiesData);
       setStats(computed);
@@ -234,7 +234,7 @@ export const usePropertyActions = () => {
       };
 
       toast({
-        title: actionMessages[newStatus] || 'Property Updated',
+        title: 'Property Updated',// actionMessages[newStatus] ||
         description: `Your property status has been updated to ${newStatus.toLowerCase().replace('_', ' ')}.`,
       });
       
@@ -353,3 +353,5 @@ export const useMessages = () => {
     refetch,
   };
 };
+
+

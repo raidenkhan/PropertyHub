@@ -1,4 +1,5 @@
 // lib/auth/authservice.ts
+import { NextRouter } from 'next/router';
 import { BACKEND_BASE_URL } from '../constants/api';
 import { validateUser, User } from './types';
 import Cookies from 'js-cookie';
@@ -38,6 +39,11 @@ class AuthService {
   private refreshToken: string | null = null;
   private user: User | null = null;
 
+  private router: NextRouter | null = null;
+
+  setRouter(router: NextRouter) {
+    this.router = router;
+  }
   constructor() {
     if (typeof window !== 'undefined') {
       this.accessToken = Cookies.get('accessToken') || null;
@@ -141,8 +147,23 @@ class AuthService {
     }
   }
 
+  private redirectToAuth(): void {
+    if (typeof window !== 'undefined') {
+      if (this.router) {
+        this.router.push('/auth');
+      } else {
+        window.location.href = '/auth';
+      }
+    }
+  }
+
   // ✅ Refresh token
   async refreshAccessToken(): Promise<string | null> {
+    // Ensure we have the latest refresh token (fallback to cookie if memory missing)
+    if (!this.refreshToken && typeof window !== 'undefined') {
+      this.refreshToken = Cookies.get('refreshToken') || null;
+    }
+
     if (!this.refreshToken) {
       throw new Error('No refresh token available');
     }
@@ -159,13 +180,36 @@ class AuthService {
         throw new Error('Failed to refresh token');
       }
 
-      const data: AuthResponse = await response.json();
-      const validatedUser = validateUser(data.user);
+      // Be flexible with backend response shapes: {accessToken, refreshToken, user?}
+      // or snake_case keys, and/or nested under { data: ... }
+      const raw = await response.json().catch(() => ({} as any));
+      const payload = (raw && (raw.data ?? raw)) as any;
 
-      this.setTokens(data.accessToken, data.refreshToken);
-      this.setUser(validatedUser);
+      const newAccess = payload?.accessToken ?? payload?.access_token;
+      const newRefresh = payload?.refreshToken ?? payload?.refresh_token ?? this.refreshToken;
+      const maybeUser = payload?.user;
 
-      return data.accessToken;
+      if (!newAccess) {
+        // If backend didn’t provide an access token, treat as failure
+        this.clearAuth();
+        throw new Error('Invalid refresh response: missing access token');
+      }
+
+      // Persist tokens (refresh token may or may not rotate)
+      this.setTokens(newAccess, newRefresh);
+
+      // If backend returned a user, try to validate+persist it; otherwise keep existing user
+      if (maybeUser) {
+        try {
+          const validatedUser = validateUser(maybeUser);
+          this.setUser(validatedUser);
+        } catch (e) {
+          // Don’t log the user out just because refresh user payload is partial
+          console.warn('Refresh returned user but validation failed — keeping existing user');
+        }
+      }
+
+      return newAccess;
     } catch (error) {
       console.error('Token refresh error:', error);
       this.clearAuth();
@@ -176,6 +220,14 @@ class AuthService {
   // ✅ Authenticated fetch with auto-refresh
   async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
     let token = this.accessToken;
+
+    // Fallback to cookie if in-memory token is missing (e.g., after reload)
+    if (!token && typeof window !== 'undefined') {
+      token = Cookies.get('accessToken') || null;
+      if (token) {
+        this.accessToken = token;
+      }
+    }
 
     if (!token) {
       throw new Error('No access token available');

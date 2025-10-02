@@ -17,6 +17,10 @@ interface Message {
   isReported: boolean;
   createdAt: string;
 }
+interface ReportMessageResponse {
+  success: boolean;
+  message?: string;
+}
 
 class MessagesService {
   private baseUrl = BACKEND_BASE_URL;
@@ -65,13 +69,31 @@ class MessagesService {
     return data.messages;
   }
 
-  async reportMessage(messageId: number): Promise<any> {
+  async reportMessage(messageId: number): Promise<ReportMessageResponse> {
     const response = await fetch(`${this.baseUrl}/messages/${messageId}/report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
     });
     if (!response.ok) throw new Error('Failed to report message');
     return response.json();
+  }
+
+  async markAsRead(userId: number): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/messages/${userId}/mark-read`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      });
+      if (!response.ok) throw new Error('Failed to mark messages as read');
+      
+      // Clear the unread count cache since messages are now read
+      this.unreadCountCache = null;
+      
+      return response.json();
+    } catch (error) {
+      console.error('Failed to mark messages as read:', error);
+      throw error;
+    }
   }
   clearCache() {
     this.conversationsCache = null;

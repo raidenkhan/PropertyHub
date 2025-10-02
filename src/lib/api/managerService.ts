@@ -13,7 +13,7 @@ export const managerService = {
   // === PROPERTY VERIFIER ===
   getPendingProperties: async (): Promise<ApiResponse<Property[]>> => {
     const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/pending`, {
-      headers: getAuthHeader(),
+      
     });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
@@ -67,7 +67,7 @@ export const managerService = {
   // === ESCROW MANAGER ===
   getEscrowTransactions: async (): Promise<ApiResponse<Transaction[]>> => {
     const response = await authService.authenticatedFetch(`${API_URL}/manager/transactions/escrow`, {
-      headers: getAuthHeader(),
+     
     });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));

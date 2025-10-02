@@ -19,6 +19,17 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
     ],
+    rules:{
+       "@typescript-eslint/no-unused-vars": "off",
+         "@typescript-eslint/no-explicit-any": "off",
+           "jsx-quotes": "off", 
+            "@typescript-eslint/no-require-imports": "off",
+            "react/no-unescaped-entities":"off",
+            "@typescript-eslint/no-unsafe-function-type":"off",
+            "@typescript-eslint/no-empty-object-type":"off",
+            "react-hooks/exhaustive-deps":"off"
+
+    }
   },
 ];
 

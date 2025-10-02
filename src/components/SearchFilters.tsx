@@ -32,11 +32,11 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
   const [bedrooms, setBedrooms] = useState("Any")
 
   const propertyTypes = [
-    { id: "apartment", label: "Apartment", icon: Building },
-    { id: "house", label: "House", icon: Home },
-    { id: "commercial", label: "Commercial", icon: Building },
-    { id: "office", label: "Office", icon: Building },
-    { id: "land", label: "Land", icon: TreePine },
+    { id: "apartment", label: "APPARTMENT", icon: Building },
+    { id: "house", label: "HOUSE", icon: Home },
+    { id: "commercial", label: "COMMERCIAL", icon: Building },
+    { id: "office", label: "OFFICE", icon: Building },
+    { id: "land", label: "LAND", icon: TreePine },
   ]
 
   const priceRanges = [
@@ -64,7 +64,7 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
   const toggleFilter = (filter: string) => {
     setActiveFilters((prev) => {
       const updated = prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]
-      
+     
       // Update corresponding state based on filter type
       const propertyTypeFilter = propertyTypes.find(type => type.id === filter)
       if (propertyTypeFilter) {

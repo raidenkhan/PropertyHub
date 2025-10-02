@@ -125,6 +125,7 @@ export function PropertyCard({
                   size={viewMode === "list" ? "lg" : "sm"}
                   className="bg-card/90 text-foreground hover:bg-card backdrop-blur-sm"
                   tabIndex={-1} // The card is the link, so this button is decorative for keyboard users
+                  onClick={handleViewDetails}
                 >
                   <Eye className={viewMode === "list" ? "w-5 h-5 mr-2" : "w-4 h-4 mr-2"} />
                   View Details

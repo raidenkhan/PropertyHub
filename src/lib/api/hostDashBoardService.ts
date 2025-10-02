@@ -9,7 +9,7 @@ export interface Property {
   title: string;
   description: string;
   price: number;
-  type: 'RENT' | 'SALE' | 'LEASE' | 'STAY'; 
+  type: 'APPARTMENT' | 'OFFICE' | 'COMMERCIAL' | 'LAND'; 
   location: string;
   coordinates?: { lat: number; lng: number };
   images: string[];

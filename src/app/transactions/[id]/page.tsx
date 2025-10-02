@@ -82,7 +82,8 @@ export default function TransactionStatusPage() {
         setIsLoading(true);
         const response = await transactionService.getTransaction(Number(id));
         setTransaction(response.transaction);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        if(error instanceof Error)
         toast({
           title: "❌ Error",
           description: "Failed to load transaction details",

@@ -16,6 +16,10 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)'
       },
+       fontFamily: {
+       sans: ["system-ui", "sans-serif"],
+        mono: ["ui-monospace", "monospace"],
+      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',

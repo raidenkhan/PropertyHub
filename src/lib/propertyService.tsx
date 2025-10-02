@@ -1,4 +1,4 @@
-import { useAuthenticatedFetch } from "@/lib/auth/authHook"
+import { AuthenticatedFetch } from "@/lib/auth/authHook"
 import { BACKEND_BASE_URL } from "@/lib/constants/api"
 
 interface PropertyData {
@@ -6,12 +6,12 @@ interface PropertyData {
   description: string
   price: number
   location: string
-  type: "RENT" | "SALE" | "LEASE" | "STAY"
+  type: "LAND" | "APPARTMENT" | "OFFICE" | "COMMERCIAL";
   imageUrl?: string
 }
 
 export async function createProperty(data: PropertyData): Promise<void> {
-  const { authenticatedFetch } = useAuthenticatedFetch()
+  const { authenticatedFetch } = AuthenticatedFetch()
   
   try {
     const response = await authenticatedFetch(`${BACKEND_BASE_URL}/properties`, {

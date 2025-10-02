@@ -77,7 +77,7 @@ interface Message {
 // Import Socket.io
 import io, { Socket } from 'socket.io-client';
 import { chatService, SocketType } from "@/lib/api/chatService";
-import { BACKEND_BASE_URL } from "@/lib/constants/api";
+
 
 const useSound = (src: string) => {
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
@@ -127,15 +127,24 @@ export default function PropertyDetailsPage() {
     const fetchProperty = async () => {
       try {
         setIsLoading(true);
-        const response = await propertyService.getPropertyById(Number(params.id));
+        
+
+          const propertyId = Array.isArray(params.id) ? params.id[0] : params.id;
+           
+    if (!propertyId) {
+      throw new Error("Property ID is missing");
+    }
+        const response = await propertyService.getPropertyById(propertyId);
+
         setProperty(response.data);
         setOfferAmount(response.data.price);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        if(error instanceof Error)
         toast({
           title: "❌ Error",
           description: "Failed to load property",
         });
-        router.push("/properties");
+        router.push("/");
       } finally {
         setIsLoading(false);
       }
@@ -309,27 +318,6 @@ const handleSendMessage = async () => {
 
 };
 
-// Add this test function to manually test the connection
-const testConnection = () => {
-  if (!socketRef.current) {
-    console.log('❌ No socket connection');
-    return;
-  }
-  
-  console.log('🧪 Testing connection...');
-  console.log('Socket connected:', socketRef.current.connected);
-  console.log('Socket ID:', socketRef.current.id);
-  
-  socketRef.current.emit('ping');
-  
-  // Test sendMessage with dummy data
-  socketRef.current.emit('sendMessage', {
-    receiverId: property?.currentOwner.id,
-    content: 'Test message',
-  });
-  
-  console.log('📤 Test events sent');
-};
 
 // Add this button to your JSX for testing (temporary)
 // 

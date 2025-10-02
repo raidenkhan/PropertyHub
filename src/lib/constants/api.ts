@@ -1,5 +1,5 @@
 // File: lib/constants/api.ts (updated)
-export const BACKEND_BASE_URL = 'http://localhost:3000';
+export const BACKEND_BASE_URL = 'https://propertyhub-production.up.railway.app';
 export const GOOGLE_AUTH_URL = `${BACKEND_BASE_URL}/auth/google`;
 
 // API endpoints

@@ -1,6 +1,6 @@
 // app/admin/create-manager/page.tsx
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
@@ -87,11 +87,18 @@ export default function CreateManagerPage() {
 
       // Redirect to Admin Dashboard
       router.push('/admin/dashboard');
-    } catch (error: any) {
+      //@ts-espect-error
+    } catch (error:unknown) {
+       if (error instanceof Error) {
       toast({
         title: "❌ Creation Failed",
-        description: error.message || "An error occurred. Please try again.",
+        description: error.message,
+      });}else{
+         toast({
+        title: "❌ Creation Failed",
+        description: "An unknown error occurred. Please try again.",
       });
+      }
     } finally {
       setIsSubmitting(false);
     }

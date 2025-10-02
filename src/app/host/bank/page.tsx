@@ -38,7 +38,8 @@ export default function BankDetailsPage() {
         description: "You can now receive payments!",
       });
       router.push("/host/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if(error instanceof Error)
       toast({
         title: "❌ Failed to Save",
         description: error.message,

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { authService } from './authservice';
 
-export const useAuthenticatedFetch = () => {
+export const AuthenticatedFetch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

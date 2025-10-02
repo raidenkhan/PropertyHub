@@ -1,19 +1,20 @@
 // app/admin/dashboard/page.tsx
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Shield, DollarSign, MessageSquare, AlertTriangle, Settings, Plus, Search } from "lucide-react";
+import { TabsTrigger } from "@/components/ui/tabs";
+import { Users, Shield, DollarSign, MessageSquare, AlertTriangle, Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth/authContext";
 import { AnimatedBackground } from "@/components/animated-background";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList } from "@radix-ui/react-tabs";
 
 // Mock Data — Replace with API calls
 const mockUsers = [
@@ -40,12 +41,7 @@ export default function AdminDashboard() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Simulate API fetch
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-  }, []);
+
 
   const handleAssignRole = (userId: number, newRole: string) => {
     // Simulate API call

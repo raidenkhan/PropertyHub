@@ -1,13 +1,13 @@
 // src/app/dashboard/page.tsx
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs,  TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Home, 
   DollarSign, 
@@ -30,19 +30,43 @@ import { ModeToggle } from "@/components/dashboard/ModeToggle";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
+import { propertyService } from "@/lib/api/propertyService";
+import { transactionService, TransactionHistory } from "@/lib/api/transactionService";
+import { messagesService } from "@/lib/api/messageService";
+import { notificationService } from "@/lib/api/notificationService";
+import { useNotifications } from "@/contexts/NotificationContext";
+import { PerformanceMonitor } from "@/lib/performance";
+
+// Lazy load tab components
+const OverviewTab = lazy(() => import("@/components/dashboard/tabs/OverviewTab").then(module => ({ default: module.OverviewTab })));
+const PropertiesTab = lazy(() => import("@/components/dashboard/tabs/PropertiesTab").then(module => ({ default: module.PropertiesTab })));
+
+// Loading fallback component
+const TabLoadingFallback = () => (
+  <div className="flex items-center justify-center py-8">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 // Types
 interface Property {
   id: number;
   title: string;
+  description?: string;
   location: string;
   price: number;
   status: string;
+  type?: string;
   images: string[];
+  amenities?: string[];
+  bedrooms?: number;
+  bathrooms?: number;
+  area?: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
-interface Transaction {
+interface DashboardTransaction {
   id: number;
   amount: number;
   status: string;
@@ -50,7 +74,7 @@ interface Transaction {
   createdAt: string;
 }
 
-interface Message {
+interface DashboardMessage {
   id: number;
   sender: { name: string };
   content: string;
@@ -58,12 +82,10 @@ interface Message {
   createdAt: string;
 }
 
-interface Notification {
+interface User {
   id: number;
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
+  name: string;
+  email: string;
 }
 
 export default function UserDashboard() {
@@ -71,12 +93,14 @@ export default function UserDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
+   const { notifications, unreadCount, loading: notificationsLoading, markAsRead } = useNotifications();
   
-  // Mock data - replace with API calls
+  
+  
+  // State for real API data
   const [properties, setProperties] = useState<Property[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
+  const [conversations, setConversations] = useState<User[]>([]);
   const [stats, setStats] = useState({
     totalListings: 0,
     activePurchases: 0,
@@ -87,39 +111,85 @@ export default function UserDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        PerformanceMonitor.mark('dashboard-data-fetch-start');
         setIsLoading(true);
         
-        // Simulate API calls
-        setTimeout(() => {
-          setProperties([
-            { id: 1, title: "Luxury Apartment in Lekki", location: "Lekki, Lagos", price: 8500000, status: "LISTED", images: ["/placeholder-property.jpg"], createdAt: "2025-09-01" },
-            { id: 2, title: "Commercial Space in VI", location: "Victoria Island, Lagos", price: 12000000, status: "SOLD", images: ["/placeholder-property.jpg"], createdAt: "2025-08-15" },
-          ]);
-          
-          setTransactions([
-            { id: 1, amount: 49394304, status: "COMPLETED", property: { title: "Hotel Delala", location: "Lagos" }, createdAt: "2025-09-21" },
-            { id: 2, amount: 7500000, status: "ESCROW", property: { title: "Apartment in Ikoyi", location: "Ikoyi, Lagos" }, createdAt: "2025-09-18" },
-          ]);
-          
-          setMessages([
-            { id: 1, sender: { name: "PropertyHub Support" }, content: "Your payment has been confirmed!", isRead: false, createdAt: "2025-09-21" },
-            { id: 2, sender: { name: "Draylock Ray" }, content: "Hi, I'm interested in your property", isRead: true, createdAt: "2025-09-20" },
-          ]);
-          
-          setNotifications([
-            { id: 1, title: "Payment Received", message: "₦49,394,304 has been received for Hotel Delala", isRead: false, createdAt: "2025-09-21" },
-            { id: 2, title: "Property Sold", message: "Your property 'Commercial Space in VI' has been sold", isRead: true, createdAt: "2025-09-15" },
-          ]);
-          
-          setStats({
-            totalListings: 2,
-            activePurchases: 1,
-            unreadMessages: 1,
-            unreadNotifications: 1,
-          });
-          
-          setIsLoading(false);
-        }, 10);
+        // Fetch critical data first (properties and stats)
+        const propertiesPromise = propertyService.getMyProperties().catch(err => {
+          console.warn('Properties fetch failed:', err);
+          return { data: [] };
+        });
+        
+        // Start with essential data
+        const propertiesResponse = await propertiesPromise;
+        const propertiesData = propertiesResponse?.data || [];
+        setProperties(propertiesData);
+        
+        // Set initial loading to false for faster perceived performance
+        setIsLoading(false);
+        
+        // Fetch remaining data in background
+        const [transactionsResponse, conversationsData, unreadMessageCount] = await Promise.allSettled([
+          transactionService.getTransactionHistory().catch(err => {
+            console.warn('Transactions fetch failed:', err);
+            return { data: [] };
+          }),
+          messagesService.getConversations().catch(err => {
+            console.warn('Conversations fetch failed:', err);
+            return [];
+          }),
+          messagesService.getUnreadMessageCount().catch(err => {
+            console.warn('Unread count fetch failed:', err);
+            return 0;
+          })
+        ]);
+        
+        // Process background data
+        const transactionsData = transactionsResponse.status === 'fulfilled' ? 
+          (Array.isArray(transactionsResponse.value?.data) ? transactionsResponse.value.data : []) : [];
+        
+        const dashboardTransactions: DashboardTransaction[] = transactionsData.map((tx: TransactionHistory) => ({
+          id: tx.id,
+          amount: tx.amount,
+          status: tx.status,
+          property: {
+            title: tx.property.title,
+            location: tx.property.location
+          },
+          createdAt: tx.createdAt.toString()
+        }));
+        
+        setTransactions(dashboardTransactions);
+        
+        // Update conversations
+        const conversations = conversationsData.status === 'fulfilled' ? conversationsData.value : [];
+        setConversations(conversations || []);
+        
+        // Update message count
+        const messageCount = unreadMessageCount.status === 'fulfilled' ? unreadMessageCount.value : 0;
+        
+        // Calculate and update stats
+        const activePurchases = dashboardTransactions.filter(tx => 
+          tx.status === 'PENDING' || tx.status === 'ESCROW'
+        ).length;
+        
+        setStats({
+          totalListings: propertiesData.length,
+          activePurchases: activePurchases,
+          unreadMessages: messageCount || 0,
+          unreadNotifications: unreadCount || 0,
+        });
+        
+        PerformanceMonitor.mark('dashboard-data-fetch-end');
+        const fetchDuration = PerformanceMonitor.measure(
+          'dashboard-data-fetch-duration', 
+          'dashboard-data-fetch-start', 
+          'dashboard-data-fetch-end'
+        );
+        
+        if (fetchDuration && process.env.NODE_ENV === 'development') {
+          console.log(`Dashboard data fetch took ${fetchDuration.toFixed(2)}ms`);
+        }
       } catch (error) {
         console.error('Failed to fetch data:', error);
         toast({
@@ -134,6 +204,22 @@ export default function UserDashboard() {
       fetchData();
     }
   }, [user]);
+  
+  // Initialize performance tracking
+  useEffect(() => {
+    PerformanceMonitor.trackWebVitals();
+    
+    // Register service worker for caching
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('SW registered: ', registration);
+        })
+        .catch((registrationError) => {
+          console.log('SW registration failed: ', registrationError);
+        });
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -339,121 +425,16 @@ export default function UserDashboard() {
                 >
                   {/* Overview Tab */}
                   {activeTab === "overview" && (
-                    <div className="space-y-4 md:space-y-6">
-                      <h2 className="text-xl md:text-2xl font-bold">Recent Activity</h2>
-                      <div className="space-y-3 md:space-y-4">
-                        {[
-                          { type: "purchase", title: "Purchase Confirmed", message: "₦49,394,304 for Hotel Delala", time: "2 hours ago", status: "success" },
-                          { type: "message", title: "New Message", message: "From Draylock Ray: Hi, I'm interested...", time: "1 day ago", status: "info" },
-                          { type: "property", title: "Property Sold", message: "Commercial Space in VI has been sold", time: "3 days ago", status: "success" },
-                        ].map((activity, index) => (
-                          <Card key={index} className="border-l-4 border-l-primary dark:border-l-blue-500">
-                            <CardContent className="p-3 md:p-4">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <h3 className="font-semibold text-sm md:text-base">{activity.title}</h3>
-                                  <p className="text-xs md:text-sm text-muted-foreground">{activity.message}</p>
-                                  <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-                                </div>
-                                <Badge className={
-                                  activity.status === "success" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
-                                  "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                                }>
-                                  {activity.status === "success" ? <CheckCircle className="h-3 w-3 md:h-4 md:w-4" /> : <Clock className="h-3 w-3 md:h-4 md:w-4" />}
-                                </Badge>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
+                    <Suspense fallback={<TabLoadingFallback />}>
+                      <OverviewTab />
+                    </Suspense>
                   )}
 
                   {/* Properties Tab */}
                   {activeTab === "properties" && (
-                    <div className="space-y-4 md:space-y-6">
-                      {properties.length === 0 ? (
-                        <div className="text-center py-8 md:py-12">
-                          <Home className="mx-auto h-12 w-12 md:h-16 md:w-16 text-muted-foreground dark:text-gray-400 mb-4" />
-                          <h3 className="text-lg md:text-xl font-semibold text-foreground dark:text-white mb-2">No Properties Listed</h3>
-                          <p className="text-sm md:text-base text-muted-foreground dark:text-gray-300 mb-6">Start listing your properties to earn money!</p>
-                          <Button onClick={() => router.push("/host/properties/new")} className="bg-primary hover:bg-primary/90">
-                            <Plus className="mr-2 h-4 w-4" /> List Your First Property
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 md:space-y-4">
-                          {/* Mobile List View */}
-                          <div className="block md:hidden space-y-3">
-                            {properties.map((property) => (
-                              <Card key={property.id} className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-all duration-300 bg-card/30 backdrop-blur-sm">
-                                <div className="flex items-stretch">
-                                  <div className="relative w-24 flex-shrink-0">
-                                    <div className="aspect-square w-full">
-                                      <img
-                                        src={property.images[0]}
-                                        alt={property.title}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                    <Badge className={`absolute top-1 right-1 text-xs px-1 py-0.5 ${
-                                      property.status === "LISTED" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
-                                      "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                                    }`}>
-                                      {property.status}
-                                    </Badge>
-                                  </div>
-                                  <div className="flex-1 p-3">
-                                    <h3 className="font-semibold text-sm line-clamp-2 mb-1">{property.title}</h3>
-                                    <div className="flex items-center gap-1 text-muted-foreground mb-2">
-                                      <MapPin className="w-3 h-3" />
-                                      <span className="text-xs">{property.location}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                      <span className="font-bold text-sm">₦{property.price.toLocaleString()}</span>
-                                      <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={() => router.push(`/properties/${property.id}`)}>
-                                        <Eye className="w-3 h-3 mr-1" />
-                                        View
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </Card>
-                            ))}
-                          </div>
-                          
-                          {/* Desktop Grid View */}
-                          <div className="hidden md:grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {properties.map((property) => (
-                              <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                                <div className="h-48 bg-muted">
-                                  <img src={property.images[0]} alt={property.title} className="w-full h-full object-cover" />
-                                </div>
-                                <CardContent className="p-4">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-semibold line-clamp-2">{property.title}</h3>
-                                    <Badge className={
-                                      property.status === "LISTED" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
-                                      property.status === "SOLD" ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" :
-                                      "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                                    }>
-                                      {property.status}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground mb-2">{property.location}</p>
-                                  <div className="flex justify-between items-center">
-                                    <span className="font-bold">₦{property.price.toLocaleString()}</span>
-                                    <Button variant="ghost" size="sm" onClick={() => router.push(`/properties/${property.id}`)}>
-                                      View
-                                    </Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <Suspense fallback={<TabLoadingFallback />}>
+                      <PropertiesTab properties={properties} />
+                    </Suspense>
                   )}
 
                                  {/* Purchases Tab */}
@@ -548,36 +529,49 @@ export default function UserDashboard() {
                   {/* Messages Tab */}
                   {activeTab === "messages" && (
                     <div className="space-y-4 md:space-y-6">
-                      {messages.length === 0 ? (
+                      {conversations.length === 0 ? (
                         <div className="text-center py-8 md:py-12">
                           <MessageSquare className="mx-auto h-12 w-12 md:h-16 md:w-16 text-muted-foreground dark:text-gray-400 mb-4" />
-                          <h3 className="text-lg md:text-xl font-semibold text-foreground dark:text-white mb-2">No Messages Yet</h3>
-                          <p className="text-sm md:text-base text-muted-foreground dark:text-gray-300">You'll see messages from buyers or sellers here.</p>
+                          <h3 className="text-lg md:text-xl font-semibold text-foreground dark:text-white mb-2">No Conversations Yet</h3>
+                          <p className="text-sm md:text-base text-muted-foreground dark:text-gray-300">You &apos ll see conversations with buyers or sellers here.</p>
+                          <Button onClick={() => router.push("/messages")} className="mt-4">
+                            <MessageSquare className="mr-2 h-4 w-4" /> Go to Messages
+                          </Button>
                         </div>
                       ) : (
                         <div className="space-y-3 md:space-y-4">
-                          {messages.map((message) => (
-                            <Card key={message.id} className={message.isRead ? "border-l-4 border-l-muted" : "border-l-4 border-l-primary dark:border-l-blue-500"}>
+                          {conversations.map((conversation) => (
+                            <Card 
+                              key={conversation.id} 
+                              className="border-l-4 border-l-primary dark:border-l-blue-500 hover:shadow-md transition-shadow cursor-pointer"
+                              onClick={() => router.push(`/messages?user=${conversation.id}`)}
+                            >
                               <CardContent className="p-3 md:p-4">
                                 <div className="flex items-start justify-between">
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-2">
                                       <Avatar className="h-6 w-6 md:h-8 md:w-8">
-                                        <AvatarFallback className="text-xs">{message.sender.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                        <AvatarFallback className="text-xs">
+                                          {conversation.name.split(' ').map(n => n[0]).join('')}
+                                        </AvatarFallback>
                                       </Avatar>
-                                      <h3 className="font-semibold text-sm md:text-base">{message.sender.name}</h3>
-                                      {!message.isRead && (
-                                        <Badge variant="destructive" className="ml-2 text-xs">New</Badge>
-                                      )}
+                                      <h3 className="font-semibold text-sm md:text-base">{conversation.name}</h3>
                                     </div>
-                                    <p className="text-xs md:text-sm">{message.content}</p>
-                                    <p className="text-xs text-muted-foreground mt-2">{new Date(message.createdAt).toLocaleString()}</p>
+                                    <p className="text-xs md:text-sm text-muted-foreground">{conversation.email}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Click to view conversation</p>
                                   </div>
-                                  <Button variant="ghost" size="sm" className="text-xs md:text-sm">Reply</Button>
+                                  <Button variant="ghost" size="sm" className="text-xs md:text-sm">
+                                    <MessageSquare className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </CardContent>
                             </Card>
                           ))}
+                          <div className="text-center pt-4">
+                            <Button onClick={() => router.push("/messages")} variant="outline">
+                              View All Messages
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -586,30 +580,116 @@ export default function UserDashboard() {
                   {/* Notifications Tab */}
                   {activeTab === "notifications" && (
                     <div className="space-y-4 md:space-y-6">
-                      {notifications.length === 0 ? (
+                      {notificationsLoading ? (
+                        <div className="flex items-center justify-center py-8 md:py-12">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                      ) : notifications.length === 0 ? (
                         <div className="text-center py-8 md:py-12">
                           <Bell className="mx-auto h-12 w-12 md:h-16 md:w-16 text-muted-foreground dark:text-gray-400 mb-4" />
                           <h3 className="text-lg md:text-xl font-semibold text-foreground dark:text-white mb-2">No Notifications</h3>
-                          <p className="text-sm md:text-base text-muted-foreground dark:text-gray-300">You'll be notified about important updates here.</p>
+                          <p className="text-sm md:text-base text-muted-foreground dark:text-gray-300">You &aposll be notified about important updates here.</p>
                         </div>
                       ) : (
                         <div className="space-y-3 md:space-y-4">
-                          {notifications.map((notification) => (
-                            <Card key={notification.id} className={notification.isRead ? "border-l-4 border-l-muted" : "border-l-4 border-l-primary dark:border-l-blue-500"}>
-                              <CardContent className="p-3 md:p-4">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <h3 className="font-semibold mb-1 text-sm md:text-base">{notification.title}</h3>
-                                    <p className="text-xs md:text-sm mb-2">{notification.message}</p>
-                                    <p className="text-xs text-muted-foreground">{new Date(notification.createdAt).toLocaleString()}</p>
+                          {notifications.map((notification) => {
+                            const handleNotificationClick = async () => {
+                              if (!notification.read) {
+                                try {
+                                  await markAsRead(notification.id);
+                                } catch (error) {
+                                  console.error('Failed to mark notification as read:', error);
+                                }
+                              }
+                              
+                              // Handle navigation based on notification type
+                              if (notification.type === 'PROPERTY_APPROVED' || notification.type === 'PROPERTY_REJECTED') {
+                                // Navigate to properties management
+                                router.push('/host/dashboard');
+                              } else if (notification.type === 'TRANSACTION_ESCROW_RELEASED' || notification.type === 'TRANSACTION_PAYMENT_CONFIRMED') {
+                                // Navigate to transactions/payouts
+                                router.push('/payouts');
+                              } else if (notification.type === 'MESSAGE_RECEIVED') {
+                                // Navigate to messages
+                                router.push('/messages');
+                              }
+                            };
+                            
+                            return (
+                              <Card 
+                                key={notification.id} 
+                                className={`transition-all cursor-pointer hover:shadow-lg ${
+                                  !notification.read 
+                                    ? "border-l-4 border-l-primary dark:border-l-blue-500 bg-blue-50/30 dark:bg-blue-900/10" 
+                                    : "border-l-4 border-l-muted"
+                                }`}
+                                onClick={handleNotificationClick}
+                              >
+                                <CardContent className="p-3 md:p-4">
+                                  <div className="flex items-start gap-3">
+                                    {/* Notification Icon */}
+                                    <div className={`flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-sm ${
+                                      notificationService.getNotificationColor(notification.type)
+                                    }`}>
+                                      <span className="text-base md:text-lg">
+                                        {notificationService.getNotificationIcon(notification.type)}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <h3 className={`font-semibold text-sm md:text-base ${
+                                          !notification.read 
+                                            ? 'text-foreground dark:text-white' 
+                                            : 'text-muted-foreground'
+                                        }`}>
+                                          {notification.title}
+                                        </h3>
+                                        <div className="flex items-center gap-2">
+                                          {!notification.read && (
+                                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                          )}
+                                          <Badge 
+                                            variant={!notification.read ? "destructive" : "secondary"} 
+                                            className="text-xs flex-shrink-0"
+                                          >
+                                            {!notification.read ? 'New' : 'Read'}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      
+                                      <p className="text-xs md:text-sm text-muted-foreground mb-2 line-clamp-2">
+                                        {notification.message}
+                                      </p>
+                                      
+                                      <div className="flex items-center justify-between">
+                                        <p className="text-xs text-muted-foreground">
+                                          {notificationService.formatTimeAgo(notification.createdAt)}
+                                        </p>
+                                        
+                                        {/* Related item info */}
+                                        {(notification.property || notification.transaction || notification.dispute) && (
+                                          <div className="text-xs text-muted-foreground">
+                                            {notification.property && `Property: ${notification.property.title}`}
+                                            {notification.transaction && `Transaction: ₦${notification.transaction.amount.toLocaleString()}`}
+                                            {notification.dispute && `Dispute: ${notification.dispute.title}`}
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Type badge */}
+                                      <div className="mt-2">
+                                        <Badge variant="outline" className="text-xs">
+                                          {notification.type.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase())}
+                                        </Badge>
+                                      </div>
+                                    </div>
                                   </div>
-                                  {!notification.isRead && (
-                                    <Badge variant="destructive" className="text-xs">New</Badge>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
