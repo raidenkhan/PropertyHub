@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, Req, UseGuards, Res } from '@nestjs/common';
+import { Body, Controller, Post, Get, Req, UseGuards, Res, UnauthorizedException } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
@@ -26,6 +26,27 @@ export class AuthController {
   async refresh(@Body('refreshToken') token: string) {
     return this.authService.refreshToken(token);
   }
+
+
+  @Get('me')
+  @UseGuards(JwtRefreshGuard)
+  async getCurrentUser(@Req() req) {
+    const userId = req.user.sub; // Extract user ID from JWT payload
+    
+    // Get user with roles from database
+    const user = await this.authService.getUserWithRoles(userId);
+    
+    console.log(" Current User : \n\n",user)
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+
+    
+    return this.authService.getCurrentUser(userId)
+  }
+
+
 @Post('google/test')
 async googleTest(@Body() body: any) {
   const user = await this.authService.validateGoogleUser(body);

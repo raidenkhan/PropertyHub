@@ -218,7 +218,7 @@ export class AuthService {
     }
 
     // Create new user with Google data and assign USER role
-    console.log("\n\nUser Profile: ",profile)
+  
     const newUser = await this.prisma.user.create({
       data: {
         email: profile.email,
@@ -229,14 +229,14 @@ export class AuthService {
       },
     });
 
-    console.log("New user \n\n",newUser)
+    
 
     // Assign default USER role
     const userRole = await this.prisma.role.findUnique({
       where: { name: 'USER' }
     });
 
-     console.log(newUser)
+ 
 
     if (userRole) {
       await this.prisma.userRole.create({
@@ -253,7 +253,30 @@ export class AuthService {
   async googleLogin(user: any) {
     return this.signToken(user);
   }
+async getCurrentUser(userId: number) {
+    const user = await this.getUserWithRoles(userId);
+    
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('User not found or deactivated');
+    }
 
+    const roles = user.userRoles?.map(ur => ur.role.name) || [];
+    
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+      phone: user.phone,
+      roles,
+      primaryRole: this.getPrimaryRole(roles),
+      redirectPath: this.getRedirectPath(roles),
+      isActive: user.isActive,
+      provider: user.provider,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
   // Admin-only method to create other admins
   async createAdmin(dto: any, creatorId: number) {
     const creator = await this.prisma.user.findUnique({
