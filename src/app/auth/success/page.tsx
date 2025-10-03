@@ -24,7 +24,7 @@ function GoogleAuthSuccessComponent() {
         }
 
         // Store tokens and get user data
-        await login(token, refreshToken, true); // isGoogleAuth = true
+        await login(undefined, undefined, true, token, refreshToken); // isGoogleAuth = true
         
         setStatus('success');
         setMessage('Authentication successful! Redirecting...');

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, XCircle } from "lucide-react";
 import { paymentService } from "@/lib/api/paymentService";
-import { toast } from "@/hooks/use-toast";
 
 export default function PaymentCallbackPage() {
   const router = useRouter();
