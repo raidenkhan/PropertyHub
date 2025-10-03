@@ -5,6 +5,7 @@ import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guards';
 
 @Controller('auth')
 export class AuthController {
@@ -29,7 +30,7 @@ export class AuthController {
 
 
   @Get('me')
-  @UseGuards(JwtRefreshGuard)
+  @UseGuards(JwtAuthGuard)
   async getCurrentUser(@Req() req) {
     const userId = req.user.sub; // Extract user ID from JWT payload
     
