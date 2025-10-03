@@ -254,6 +254,7 @@ export class AuthService {
     return this.signToken(user);
   }
 async getCurrentUser(userId: number) {
+  
   console.log("Userid",userId)
     const user = await this.getUserWithRoles(userId);
     
@@ -262,7 +263,6 @@ async getCurrentUser(userId: number) {
     }
 
     const roles = user.userRoles?.map(ur => ur.role.name) || [];
-    console.log("User \n\n\n",user)
     return {
       id: user.id,
       email: user.email,
