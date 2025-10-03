@@ -229,10 +229,14 @@ export class AuthService {
       },
     });
 
+    console.log("New user \n\n",newUser)
+
     // Assign default USER role
     const userRole = await this.prisma.role.findUnique({
       where: { name: 'USER' }
     });
+
+     console.log(newUser)
 
     if (userRole) {
       await this.prisma.userRole.create({
