@@ -254,6 +254,7 @@ export class AuthService {
     return this.signToken(user);
   }
 async getCurrentUser(userId: number) {
+  console.log("Userid",userId)
     const user = await this.getUserWithRoles(userId);
     
     if (!user || !user.isActive) {
