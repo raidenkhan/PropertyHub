@@ -1,6 +1,6 @@
  "use client";
  
- import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
  import { authService } from './authservice';
  import { User } from './types';
 import { useRouter } from 'next/navigation';
@@ -32,24 +32,24 @@ interface AuthContextType {
    const [token, setToken] = useState<string | null>(null);
    const [isLoading, setIsLoading] = useState(true);
  
-   const checkUser = () => {
-     const currentUser = authService.getCurrentUser();
-     const currentToken = authService.getAccessToken();
-     if (currentUser && currentToken && authService.isAuthenticated()) {
-       setUser(currentUser);
-       setToken(currentToken);
-     } else {
-       setUser(null);
-       setToken(null);
-     }
-     setIsLoading(false);
-   };
+  const checkUser = useCallback(() => {
+    const currentUser = authService.getCurrentUser();
+    const currentToken = authService.getAccessToken();
+    if (currentUser && currentToken && authService.isAuthenticated()) {
+      setUser(currentUser);
+      setToken(currentToken);
+    } else {
+      setUser(null);
+      setToken(null);
+    }
+    setIsLoading(false);
+  }, []);
  
    useEffect(() => {
      checkUser();
    }, []);
  
-  const login = async (
+  const login = useCallback(async (
     email?: string, 
     password?: string, 
     isGoogleAuth = false,
@@ -60,6 +60,7 @@ interface AuthContextType {
     try {
       if (isGoogleAuth && accessToken && refreshToken) {
         // Handle Google OAuth callback
+        console.log('Processing Google auth in context...');
         await authService.processGoogleAuth(accessToken, refreshToken);
       } else if (email && password) {
         // Handle regular email/password login
@@ -74,16 +75,16 @@ interface AuthContextType {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []); // Empty dependency array since authService is stable
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = useCallback(async () => {
     try {
       await authService.loginWithGoogle();
     } catch (error) {
       console.error('Google login failed:', error);
       throw error;
     }
-  };
+  }, []);
  
    const signup = async (email: string, password: string, name: string) => {
      setIsLoading(true);

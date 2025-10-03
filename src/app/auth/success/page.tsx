@@ -12,10 +12,18 @@ function GoogleAuthSuccessComponent() {
   const { login } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Processing authentication...');
+  const [hasProcessed, setHasProcessed] = useState(false);
 
   useEffect(() => {
+    // Prevent multiple executions
+    if (hasProcessed || status !== 'processing') {
+      return;
+    }
+
     const processTokens = async () => {
       try {
+        setHasProcessed(true);
+        
         const token = searchParams.get('token');
         const refreshToken = searchParams.get('refresh');
 
@@ -23,6 +31,7 @@ function GoogleAuthSuccessComponent() {
           throw new Error('Missing authentication tokens');
         }
 
+        console.log('Processing Google auth tokens...');
         // Store tokens and get user data
         await login(undefined, undefined, true, token, refreshToken); // isGoogleAuth = true
         
@@ -47,7 +56,7 @@ function GoogleAuthSuccessComponent() {
     };
 
     processTokens();
-  }, [searchParams, login, router]);
+  }, []); // Empty dependency array since we have hasProcessed guard
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
