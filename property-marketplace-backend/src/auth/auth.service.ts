@@ -218,6 +218,7 @@ export class AuthService {
     }
 
     // Create new user with Google data and assign USER role
+    console.log("\n\nUser Profile: ",profile)
     const newUser = await this.prisma.user.create({
       data: {
         email: profile.email,

@@ -27,7 +27,6 @@ async markAsRead(@Param('userId') userId: string, @Req() req) {
 }
    @Get()
   async getConversations(@Req() req) {
-    console.log(req.user)
     const conversations = await this.messagesService.getConversations(req.user.userId);
     return {
       status: 'success',
@@ -41,7 +40,6 @@ async getUnreadCount(@Req() req) {
 }
    @Get(':userId')
   async getMessages(@Param('userId') userId: string, @Req() req) {
-    console.log("\n\n\n\nright here right now\n\n\n")
     const messages = await this.messagesService.getMessages(
       req.user.userId,
       parseInt(userId),
