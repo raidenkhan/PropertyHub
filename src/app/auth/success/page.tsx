@@ -31,7 +31,7 @@ function GoogleAuthSuccessComponent() {
         
         // Wait a moment then redirect
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push('/');
         }, 2000);
 
       } catch (error) {
