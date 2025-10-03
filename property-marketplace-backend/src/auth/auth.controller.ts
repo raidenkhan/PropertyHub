@@ -32,9 +32,8 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@Req() req) {
-    console.log("Request User :\n\n",req.user)
-    const userId = req.user.sub; // Extract user ID from JWT payload
-    console.log("uSER ID cONTORLLER :\N",userId)
+    
+    const userId = req.user.userId; // Extract user ID from JWT payload
     return this.authService.getCurrentUser(userId)
   }
 
