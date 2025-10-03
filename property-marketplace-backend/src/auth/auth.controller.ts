@@ -34,16 +34,6 @@ export class AuthController {
   async getCurrentUser(@Req() req) {
     const userId = req.user.sub; // Extract user ID from JWT payload
     
-    // Get user with roles from database
-    const user = await this.authService.getUserWithRoles(userId);
-    
-    console.log(" Current User : \n\n",user)
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-
-    
     return this.authService.getCurrentUser(userId)
   }
 

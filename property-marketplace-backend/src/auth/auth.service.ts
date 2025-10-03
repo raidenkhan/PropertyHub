@@ -261,7 +261,7 @@ async getCurrentUser(userId: number) {
     }
 
     const roles = user.userRoles?.map(ur => ur.role.name) || [];
-    
+    console.log("User \n\n\n",user)
     return {
       id: user.id,
       email: user.email,
