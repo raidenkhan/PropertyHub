@@ -15,6 +15,7 @@ import { PropertyCard } from "@/components/PropertyCard"
 import { propertyService } from "@/lib/api/propertyService"
 import { convertPropertyData, groupPropertiesByLocationClusters } from "@/lib/utils"
 import { UnsortedPropertiesView } from "@/components/UnsortedPropertiesView"
+import { ResponsiveLocationButton, CategoryLocationDisplay } from "@/components/ui/responsive-text"
 
 interface Property {
   id: string
@@ -241,15 +242,16 @@ function LocationCategories({
               </Button>
             </div>
 
-            {/* Category Info - Updated count to show filtered results */}
+            {/* Category Info - Updated count to show filtered results with responsive display */}
             <div className="flex items-center gap-2 text-muted-foreground dark:text-gray-300">
               <MapPin className="w-4 h-4 dark:text-gray-300" />
-              <span>
-                {filteredProperties.length === category.properties.length 
-                  ? `${category.count.toLocaleString()} homes in ${category.location}`
-                  : `${filteredProperties.length} of ${category.properties.length} homes shown in ${category.location}`
+              <CategoryLocationDisplay 
+                location={category.location}
+                count={filteredProperties.length === category.properties.length 
+                  ? category.count 
+                  : filteredProperties.length
                 }
-              </span>
+              />
             </div>
 
             <motion.div
@@ -267,16 +269,14 @@ function LocationCategories({
               ))}
             </motion.div>
 
-            {/* View All Button - Updated to show filtered count */}
+            {/* View All Button - Updated to use ResponsiveLocationButton component */}
             <div className="text-center">
-              <Button
-                variant="outline"
+              <ResponsiveLocationButton
+                locationText={category.location}
+                propertyCount={filteredProperties.length}
                 onClick={() => handleCategoryClick(category)}
-                className="px-8 py-2 bg-background hover:bg-accent dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
-                aria-label={`View all properties in ${category.location}`}
-              >
-                View all {filteredProperties.length} properties in {category.location}
-              </Button>
+                className="bg-background hover:bg-accent dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
+              />
             </div>
           </motion.div>
         )
@@ -286,7 +286,30 @@ function LocationCategories({
 }
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    // Default to list view on mobile, grid on desktop
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768 ? "list" : "grid"
+    }
+    return "grid"
+  })
+
+  // Handle responsive default view mode changes
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768
+      if (isMobile && viewMode === "grid") {
+        setViewMode("list")
+      } else if (!isMobile && viewMode === "list" && window.innerWidth > 1024) {
+        setViewMode("grid")
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize)
+      return () => window.removeEventListener('resize', handleResize)
+    }
+  }, [])
   const [showMap, setShowMap] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showCategories, setShowCategories] = useState(true)

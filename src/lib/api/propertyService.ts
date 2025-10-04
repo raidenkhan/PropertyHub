@@ -133,14 +133,19 @@ async getMyProperties(params?: { status?: string; page?: number; limit?: number 
     return response.json();
   }
 
+  // Public method to get property by ID - no authentication required
   async getPropertyById(propertyId: string): Promise<any> {
-    const response = await authService.authenticatedFetch(`${this.baseUrl}/properties/${propertyId}`, {
+    const response = await fetch(`${this.baseUrl}/properties/${propertyId}`, {
       method: 'GET',
-   
+      headers: {
+        'Content-Type': 'application/json',
+        // Include auth header if available, but don't require it
+        ...getAuthHeader(),
+      },
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ message: 'Failed to fetch property' }));
       throw new Error(error.message || 'Failed to fetch property');
     }
 

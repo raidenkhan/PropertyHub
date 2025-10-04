@@ -7,6 +7,7 @@ import { MapPin, TrendingUp, Clock, Star } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { Badge } from "../components/ui/badge"
 import { PropertyCard } from "@/components/PropertyCard"
+import { ResponsiveLocationButton, CategoryLocationDisplay } from "@/components/ui/responsive-text"
 
 interface Property {
   id: string
@@ -267,9 +268,11 @@ export function LocationCategories({ onCategorySelect, onLike, viewMode }: Locat
           {/* Category Info */}
           <div className="flex items-center gap-2 text-slate-600">
             <MapPin className="w-4 h-4" />
-            <span>
-              Over {category.count.toLocaleString()} homes in {category.location}
-            </span>
+            <CategoryLocationDisplay 
+              location={category.location}
+              count={category.count}
+              className="text-slate-600"
+            />
           </div>
 
           <motion.div
@@ -287,15 +290,14 @@ export function LocationCategories({ onCategorySelect, onLike, viewMode }: Locat
             ))}
           </motion.div>
 
-          {/* View All Button */}
+          {/* View All Button - Using ResponsiveLocationButton */}
           <div className="text-center">
-            <Button
-              variant="outline"
+            <ResponsiveLocationButton
+              locationText={category.location}
+              propertyCount={category.count.toLocaleString()}
               onClick={() => handleCategoryClick(category)}
-              className="px-8 py-2 hover:bg-slate-50"
-            >
-              View all {category.count.toLocaleString()} properties in {category.location}
-            </Button>
+              className="hover:bg-slate-50"
+            />
           </div>
         </motion.div>
       ))}

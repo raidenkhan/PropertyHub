@@ -254,16 +254,43 @@ const extractLocationKey = (location: string): string => {
 const extractCityName = (location: string): string => {
   // Extract city name from full location
   // e.g., "Victoria Island, Lagos" -> "Lagos"
+  // e.g., "Maitama, Abuja" -> "Abuja"
+  // e.g., "Lekki Phase 1, Lagos" -> "Lagos"
   // e.g., "Eastern Ibo 3223" -> "Eastern Ibo"
   
   const parts = location.split(',')
   if (parts.length > 1) {
-    return parts[parts.length - 1].trim()
+    // Get the last part which should be the city
+    let cityName = parts[parts.length - 1].trim()
+    
+    // Handle cases where state might be included: "Lagos, Lagos State" -> "Lagos"
+    if (cityName.toLowerCase().includes('state')) {
+      const cityParts = cityName.split(' ')
+      cityName = cityParts[0]
+    }
+    
+    return cityName
   }
   
-  // If no comma, take first few words
+  // If no comma, try to extract city from single location string
   const words = location.split(' ')
-  return words.slice(0, 2).join(' ')
+  
+  // Common patterns: "Lagos Island", "Abuja Central", etc.
+  const commonCities = ['lagos', 'abuja', 'kano', 'ibadan', 'benin', 'port', 'kaduna', 'jos', 'ilorin', 'owerri', 'enugu', 'abeokuta', 'onitsha', 'warri']
+  
+  for (const city of commonCities) {
+    if (location.toLowerCase().includes(city)) {
+      return city.charAt(0).toUpperCase() + city.slice(1)
+    }
+  }
+  
+  // Special case for Port Harcourt
+  if (location.toLowerCase().includes('port harcourt') || location.toLowerCase().includes('portharcourt')) {
+    return 'Port Harcourt'
+  }
+  
+  // Fallback: take first 1-2 words
+  return words.slice(0, Math.min(2, words.length)).join(' ')
 }
 
 // Calculate distance between two coordinates using Haversine formula
@@ -279,48 +306,70 @@ const calculateDistance = (coord1: { lat: number; lng: number }, coord2: { lat: 
   return R * c
 }
 
-// Group properties by location clusters (within 5km radius)
+// Group properties by city-level location clusters
 const groupPropertiesByLocationClusters = (properties: Property[]): LocationCategory[] => {
-  const categories: LocationCategory[] = []
-  const processedProperties: Set<string> = new Set()
+  const cityGroups = new Map<string, Property[]>()
   
+  // Group properties by city name
   properties.forEach((property) => {
-    if (processedProperties.has(property.id)) return
+    const cityName = extractCityName(property.location)
+    const normalizedCity = cityName.toLowerCase().trim()
     
-    // Find all properties within 5km of current property
-    const nearbyProperties = properties.filter((otherProperty) => {
-      if (processedProperties.has(otherProperty.id)) return false
-      
-      const distance = calculateDistance(property.coordinates, otherProperty.coordinates)
-      return distance <= 5 // 5km radius
-    })
+    if (!cityGroups.has(normalizedCity)) {
+      cityGroups.set(normalizedCity, [])
+    }
+    cityGroups.get(normalizedCity)!.push(property)
+  })
+  
+  // Convert city groups to location categories
+  const categories: LocationCategory[] = []
+  
+  cityGroups.forEach((cityProperties, normalizedCityName) => {
+    if (cityProperties.length === 0) return
     
-    // Mark all nearby properties as processed
-    nearbyProperties.forEach(p => processedProperties.add(p.id))
+    // Use the original city name from the first property for display
+    const displayCityName = extractCityName(cityProperties[0].location)
     
-    // Create location category for this cluster
-    const locationNames = [...new Set(nearbyProperties.map(p => extractCityName(p.location)))]
-    const primaryLocation = locationNames[0]
-    const categoryTitle = locationNames.length > 1 
-      ? `${primaryLocation} Area` 
-      : `Properties in ${primaryLocation}`
+    // Create a more descriptive title
+    const categoryTitle = cityProperties.length > 10 
+      ? `Popular Properties in ${displayCityName}`
+      : cityProperties.length > 5
+      ? `Available Properties in ${displayCityName}`
+      : `Properties in ${displayCityName}`
+    
+    // Calculate center coordinates for the city if needed
+    const avgCoordinates = cityProperties.reduce(
+      (acc, prop) => ({
+        lat: acc.lat + prop.coordinates.lat,
+        lng: acc.lng + prop.coordinates.lng
+      }),
+      { lat: 0, lng: 0 }
+    )
+    avgCoordinates.lat /= cityProperties.length
+    avgCoordinates.lng /= cityProperties.length
     
     const category: LocationCategory = {
-      id: extractLocationKey(`cluster-${primaryLocation}-${categories.length}`),
+      id: extractLocationKey(`city-${normalizedCityName}`),
       title: categoryTitle,
-      location: nearbyProperties[0].location, // Use the first property's full location
-      count: nearbyProperties.length,
-      properties: nearbyProperties,
-      // Add some randomized metadata
-      trending: Math.random() > 0.7,
-      recent: Math.random() > 0.8,
-      popular: nearbyProperties.length >= 5
+      location: displayCityName, // Use just the city name for cleaner display
+      count: cityProperties.length,
+      properties: cityProperties,
+      // Add metadata based on property count and characteristics
+      trending: cityProperties.length >= 8 && Math.random() > 0.6,
+      recent: cityProperties.some(p => p.description?.toLowerCase().includes('new')) || Math.random() > 0.8,
+      popular: cityProperties.length >= 10
     }
     
     categories.push(category)
   })
   
-  return categories.sort((a, b) => b.count - a.count) // Sort by property count descending
+  // Sort by property count descending, then alphabetically by city name
+  return categories.sort((a, b) => {
+    if (b.count !== a.count) {
+      return b.count - a.count
+    }
+    return a.location.localeCompare(b.location)
+  })
 }
 
 const generateRating = (): number => {

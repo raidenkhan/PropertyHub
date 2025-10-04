@@ -324,7 +324,16 @@ const handleSendMessage = async () => {
 
   // Handle Pay Now
   const handlePayNow = async () => {
-    if (!property || !user) return;
+    if (!property) return;
+
+    if (!user) {
+      toast({
+        title: "🔐 Authentication Required",
+        description: "Please log in to purchase this property",
+      });
+      router.push('/auth');
+      return;
+    }
 
     if (property.currentOwner.id === user.id) {
       toast({
@@ -570,7 +579,7 @@ const handleSendMessage = async () => {
                   </div>
 
                   {/* Action Buttons */}
-                  {property.status === 'LISTED' && user && property.currentOwner.id !== user.id ? (
+                  {property.status === 'LISTED' && property.currentOwner.id !== user?.id ? (
                     <div className="space-y-4">
                       {/* Offer Amount Input */}
                       <div className="space-y-2">
@@ -617,7 +626,17 @@ const handleSendMessage = async () => {
                           variant="outline"
                           size="lg"
                           className="w-full border-2 border-primary/20 hover:border-primary/40 text-primary hover:bg-primary/5 font-semibold py-6 rounded-xl transition-all duration-200"
-                          onClick={() => setIsChatOpen(true)}
+                          onClick={() => {
+                            if (!user) {
+                              toast({
+                                title: "🔐 Authentication Required",
+                                description: "Please log in to contact the property owner",
+                              });
+                              router.push('/auth');
+                              return;
+                            }
+                            setIsChatOpen(true);
+                          }}
                         >
                           <MessageCircle className="w-5 h-5 mr-2" />
                           Contact Owner

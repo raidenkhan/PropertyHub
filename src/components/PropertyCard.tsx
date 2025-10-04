@@ -76,19 +76,17 @@ export function PropertyCard({
         className="group w-full"
       >
         <Link href={`/property/${id}`} className="block">
-          <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900">
-            <div className="flex flex-row items-stretch">
+          <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900 h-full">
+            <div className="flex flex-row h-full min-h-[140px] sm:min-h-[180px]">
               {/* Image Container */}
-              <div className="relative w-1/3">
-                <div className="aspect-[16/9] w-full">
-                  <img
-                    src={image || "/placeholder.svg"}
-                    alt={title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
-                    loading="lazy"
-                  />
-                </div>
+              <div className="relative w-1/3 flex-shrink-0">
+                <img
+                  src={image || "/placeholder.svg"}
+                  alt={title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 absolute inset-0"
+                  onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
+                  loading="lazy"
+                />
                 {/* Like Button */}
                 <Button
                   variant="ghost"
