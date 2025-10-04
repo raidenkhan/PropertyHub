@@ -163,13 +163,13 @@ model Property {
 model PropertyLike {
   id          Int      @id @default(autoincrement())
   userId      Int
-  propertyId  Int
+  propertyId  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   user        User     @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
-  property    Property @relation("PropertyLikes", fields: [propertyId], references: [id], onDelete: Cascade)
+  property    Property @relation("PropertyLikes", fields: [propertyId], references: [propertyId], onDelete: Cascade)
 
   // Ensure user can only like a property once
   @@unique([userId, propertyId])

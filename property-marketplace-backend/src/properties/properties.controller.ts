@@ -277,31 +277,77 @@ export class PropertiesController {
       throw new BadRequestException(error.message);
     }
   }
+@Post(':id/like')
+@UseGuards(JwtAuthGuard)
+async togglePropertyLike(
+  @Param('id') id: string,
+  @Req() req
+) {
+  
+  try {
+    const result = await this.propertyService.togglePropertyLike(
+      req.user.userId,
+      id
+    );
+    
+    return {
+      status: 'success',
+      message: result.liked ? 'Property liked successfully' : 'Property unliked successfully',
+      data: result,
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message);
+  }
+}
 
-  /**
-   * Update property (only owner or admin)
+ /**
+   * Submit property for verification
    */
-  @Patch(':id')
+  @Patch(':id/submit-for-verification')
   @UseGuards(JwtAuthGuard)
-  async update(
-    @Param('id', ParseIntPipe) id: number, 
-    @Body() dto: UpdatePropertyDto, 
-    @Req() req
-  ) {
+  async submitForVerification(@Param('id', ParseIntPipe) id: number, @Req() req) {
     try {
-      console.log('ID found',id)
-      
-      const property = await this.propertyService.update(id, dto, req.user.userId);
+      const property = await this.propertyService.submitForVerification(id, req.user.userId);
       
       return {
         status: 'success',
-        message: 'Property updated successfully',
+        message: 'Property submitted for verification',
         data: property,
       };
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+
+}
+// ADD THESE ENDPOINTS TO YOUR EXISTING PropertiesController class
+
+/**
+ * Toggle like status for a property
+*/
+
+/**
+ * Check if property is liked by user
+ */
+@Get(':id/liked')
+@UseGuards(JwtAuthGuard)
+async isPropertyLiked(
+  @Param('id', ParseIntPipe) id: number,
+  @Req() req
+) {
+  try {
+    const isLiked = await this.propertyService.isPropertyLiked(
+      req.user.userId,
+      id
+    );
+    
+    return {
+      status: 'success',
+      data: { isLiked },
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message);
   }
+}
 
   /**
    * List property for sale (owner only)
@@ -341,75 +387,33 @@ export class PropertiesController {
     }
   }
 
+
   /**
-   * Submit property for verification
+   * Update property (only owner or admin)
    */
-  @Patch(':id/submit-for-verification')
+  @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  async submitForVerification(@Param('id', ParseIntPipe) id: number, @Req() req) {
+  async update(
+    @Param('id', ParseIntPipe) id: number, 
+    @Body() dto: UpdatePropertyDto, 
+    @Req() req
+  ) {
     try {
-      const property = await this.propertyService.submitForVerification(id, req.user.userId);
+      console.log('ID found',id)
+      
+      const property = await this.propertyService.update(id, dto, req.user.userId);
       
       return {
         status: 'success',
-        message: 'Property submitted for verification',
+        message: 'Property updated successfully',
         data: property,
       };
     } catch (error) {
       throw new BadRequestException(error.message);
     }
-
-}
-// ADD THESE ENDPOINTS TO YOUR EXISTING PropertiesController class
-
-/**
- * Toggle like status for a property
- */
-@Post(':id/like')
-@UseGuards(JwtAuthGuard)
-async togglePropertyLike(
-  @Param('id', ParseIntPipe) id: number,
-  @Req() req
-) {
-  try {
-    const result = await this.propertyService.togglePropertyLike(
-      req.user.userId,
-      id
-    );
-    
-    return {
-      status: 'success',
-      message: result.liked ? 'Property liked successfully' : 'Property unliked successfully',
-      data: result,
-    };
-  } catch (error) {
-    throw new BadRequestException(error.message);
   }
-}
 
-/**
- * Check if property is liked by user
- */
-@Get(':id/liked')
-@UseGuards(JwtAuthGuard)
-async isPropertyLiked(
-  @Param('id', ParseIntPipe) id: number,
-  @Req() req
-) {
-  try {
-    const isLiked = await this.propertyService.isPropertyLiked(
-      req.user.userId,
-      id
-    );
-    
-    return {
-      status: 'success',
-      data: { isLiked },
-    };
-  } catch (error) {
-    throw new BadRequestException(error.message);
-  }
-}
+ 
 
 /**
  * Get user's wishlist (liked properties)

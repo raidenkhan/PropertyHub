@@ -699,10 +699,10 @@ console.log('Returning property:', property);
 /**
  * Like a property
  */
-async likeProperty(userId: number, propertyId: number) {
+async likeProperty(userId: number, propertyId: string) {
   // Check if property exists and is listed
   const property = await this.prisma.property.findUnique({
-    where: { id: propertyId }
+    where: { propertyId }
   });
 
   if (!property) {
@@ -732,7 +732,7 @@ async likeProperty(userId: number, propertyId: number) {
       }
     }),
     this.prisma.property.update({
-      where: { id: propertyId },
+      where: {  propertyId },
       data: {
         likesCount: {
           increment: 1
@@ -750,7 +750,7 @@ async likeProperty(userId: number, propertyId: number) {
 /**
  * Unlike a property
  */
-async unlikeProperty(userId: number, propertyId: number) {
+async unlikeProperty(userId: number, propertyId: string) {
   // Check if the like exists
   const existingLike = await this.prisma.propertyLike.findUnique({
     where: {
@@ -776,7 +776,7 @@ async unlikeProperty(userId: number, propertyId: number) {
       }
     }),
     this.prisma.property.update({
-      where: { id: propertyId },
+      where: {  propertyId },
       data: {
         likesCount: {
           decrement: 1
@@ -794,7 +794,7 @@ async unlikeProperty(userId: number, propertyId: number) {
 /**
  * Toggle like status for a property
  */
-async togglePropertyLike(userId: number, propertyId: number) {
+async togglePropertyLike(userId: number, propertyId: string) {
   const existingLike = await this.prisma.propertyLike.findUnique({
     where: {
       userId_propertyId: {
@@ -814,7 +814,7 @@ async togglePropertyLike(userId: number, propertyId: number) {
 /**
  * Check if user has liked a property
  */
-async isPropertyLiked(userId: number, propertyId: number) {
+async isPropertyLiked(userId: number, propertyId: string) {
   const like = await this.prisma.propertyLike.findUnique({
     where: {
       userId_propertyId: {
@@ -928,7 +928,7 @@ async getPropertiesWithLikeStatus(userId: number | null, filters: any) {
     ...properties,
     properties: properties.properties.map(property => ({
       ...property,
-      isLiked: likedPropertyIds.has(property.id),
+      isLiked: likedPropertyIds.has(property.propertyId),
       likesCount: property.likesCount || 0
     }))
   };
