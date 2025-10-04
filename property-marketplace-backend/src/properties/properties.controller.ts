@@ -221,23 +221,7 @@ export class PropertiesController {
 
   // === PARAMETERIZED ROUTES (MUST COME AFTER SPECIFIC ROUTES) ===
 
-  /**
-   * Get property by ID (public for listed properties)
-   */
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    console.log('\n\nID received in params:', id);
-    try {
-      const property = await this.propertyService.findOne(id);
-      
-      return {
-        status: 'success',
-        data: property,
-      };
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
+
 
   /**
    * Get property history (public for transparency)
@@ -375,5 +359,126 @@ export class PropertiesController {
       throw new BadRequestException(error.message);
     }
 
+}
+// ADD THESE ENDPOINTS TO YOUR EXISTING PropertiesController class
+
+/**
+ * Toggle like status for a property
+ */
+@Post(':id/like')
+@UseGuards(JwtAuthGuard)
+async togglePropertyLike(
+  @Param('id', ParseIntPipe) id: number,
+  @Req() req
+) {
+  try {
+    const result = await this.propertyService.togglePropertyLike(
+      req.user.userId,
+      id
+    );
+    
+    return {
+      status: 'success',
+      message: result.liked ? 'Property liked successfully' : 'Property unliked successfully',
+      data: result,
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message);
+  }
+}
+
+/**
+ * Check if property is liked by user
+ */
+@Get(':id/liked')
+@UseGuards(JwtAuthGuard)
+async isPropertyLiked(
+  @Param('id', ParseIntPipe) id: number,
+  @Req() req
+) {
+  try {
+    const isLiked = await this.propertyService.isPropertyLiked(
+      req.user.userId,
+      id
+    );
+    
+    return {
+      status: 'success',
+      data: { isLiked },
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message);
+  }
+}
+
+/**
+ * Get user's wishlist (liked properties)
+ */
+@Get('wishlist')
+@UseGuards(JwtAuthGuard)
+async getUserWishlist(
+  @Req() req,
+  @Query() query: PropertyFilterDto
+) {
+  try {
+    const wishlist = await this.propertyService.getUserWishlist(
+      req.user.userId,
+      {
+        page: Number(query.page) || 1,
+        limit: Number(query.limit) || 20,
+        search: query.search,
+        type: query.type,
+        //minPrice: query.minPrice,
+       // maxPrice: query.maxPrice,
+      }
+    );
+    
+    return {
+      status: 'success',
+      data: wishlist.properties,
+      pagination: wishlist.pagination,
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message);
+  }
+}
+
+
+/**
+ * Update your existing findOne method to include like status
+ */
+@Get(':id')
+async findOne(@Param('id') id: string, @Req() req?) {
+  try {
+    const property = await this.propertyService.findOne(id);
+    
+    // If user is authenticated, check like status
+    if (req?.user?.userId) {
+      const isLiked = await this.propertyService.isPropertyLiked(
+        req.user.userId,
+        property.id
+      );
+      
+      return {
+        status: 'success',
+        data: {
+          ...property,
+          isLiked,
+          likesCount: property.likesCount || 0
+        },
+      };
+    }
+    
+    return {
+      status: 'success',
+      data: {
+        ...property,
+        isLiked: false,
+        likesCount: property.likesCount || 0
+      },
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message);
+  }
 }
 }

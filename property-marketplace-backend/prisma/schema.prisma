@@ -56,6 +56,8 @@ model User {
   createdUsers          User[]            @relation("AdminCreated")
   paystackRecipientCode String? 
   paystackSubaccountId  String?  
+
+  likedProperties       PropertyLike[]      @relation("UserLikes")
 }
 
 model Notification {
@@ -150,9 +152,30 @@ model Property {
   //notifications
   notifications         Notification[]      @relation("NotificationProperty")
 
+  likesCount    Int             @default(0)
+  likes         PropertyLike[]  @relation("PropertyLikes")
+
   @@index([propertyId])
   @@index([currentOwnerId])
   @@index([status])
+}
+
+model PropertyLike {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  propertyId  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User     @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
+  property    Property @relation("PropertyLikes", fields: [propertyId], references: [id], onDelete: Cascade)
+
+  // Ensure user can only like a property once
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+  @@map("property_likes")
 }
 
 model PropertyHistory {

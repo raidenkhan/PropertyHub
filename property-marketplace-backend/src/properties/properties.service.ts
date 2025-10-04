@@ -693,4 +693,244 @@ console.log('Returning property:', property);
       orderBy: { eventDate: 'desc' }
     });
   }
+
+  // ADD THESE METHODS TO YOUR EXISTING PropertyService class
+
+/**
+ * Like a property
+ */
+async likeProperty(userId: number, propertyId: number) {
+  // Check if property exists and is listed
+  const property = await this.prisma.property.findUnique({
+    where: { id: propertyId }
+  });
+
+  if (!property) {
+    throw new NotFoundException('Property not found');
+  }
+
+  // Check if user already liked this property
+  const existingLike = await this.prisma.propertyLike.findUnique({
+    where: {
+      userId_propertyId: {
+        userId,
+        propertyId
+      }
+    }
+  });
+
+  if (existingLike) {
+    throw new BadRequestException('Property already liked');
+  }
+
+  // Create the like and increment likes count
+  const [like, updatedProperty] = await this.prisma.$transaction([
+    this.prisma.propertyLike.create({
+      data: {
+        userId,
+        propertyId
+      }
+    }),
+    this.prisma.property.update({
+      where: { id: propertyId },
+      data: {
+        likesCount: {
+          increment: 1
+        }
+      }
+    })
+  ]);
+
+  return {
+    liked: true,
+    likesCount: updatedProperty.likesCount
+  };
+}
+
+/**
+ * Unlike a property
+ */
+async unlikeProperty(userId: number, propertyId: number) {
+  // Check if the like exists
+  const existingLike = await this.prisma.propertyLike.findUnique({
+    where: {
+      userId_propertyId: {
+        userId,
+        propertyId
+      }
+    }
+  });
+
+  if (!existingLike) {
+    throw new NotFoundException('Like not found');
+  }
+
+  // Remove the like and decrement likes count
+  const [, updatedProperty] = await this.prisma.$transaction([
+    this.prisma.propertyLike.delete({
+      where: {
+        userId_propertyId: {
+          userId,
+          propertyId
+        }
+      }
+    }),
+    this.prisma.property.update({
+      where: { id: propertyId },
+      data: {
+        likesCount: {
+          decrement: 1
+        }
+      }
+    })
+  ]);
+
+  return {
+    liked: false,
+    likesCount: updatedProperty.likesCount
+  };
+}
+
+/**
+ * Toggle like status for a property
+ */
+async togglePropertyLike(userId: number, propertyId: number) {
+  const existingLike = await this.prisma.propertyLike.findUnique({
+    where: {
+      userId_propertyId: {
+        userId,
+        propertyId
+      }
+    }
+  });
+
+  if (existingLike) {
+    return this.unlikeProperty(userId, propertyId);
+  } else {
+    return this.likeProperty(userId, propertyId);
+  }
+}
+
+/**
+ * Check if user has liked a property
+ */
+async isPropertyLiked(userId: number, propertyId: number) {
+  const like = await this.prisma.propertyLike.findUnique({
+    where: {
+      userId_propertyId: {
+        userId,
+        propertyId
+      }
+    }
+  });
+
+  return !!like;
+}
+
+/**
+ * Get user's liked properties (wishlist)
+ */
+async getUserWishlist(userId: number, filters: any) {
+  const { page = 1, limit = 20, search, type, minPrice, maxPrice } = filters;
+
+  const where: any = {
+    likes: {
+      some: {
+        userId
+      }
+    },
+    status: 'LISTED', // Only show listed properties in wishlist
+    isVerified: true
+  };
+
+  // Add filters
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { description: { contains: search, mode: 'insensitive' } },
+      { location: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  if (type) {
+    where.type = type;
+  }
+
+  if (minPrice) {
+    where.price = { gte: parseFloat(minPrice) };
+  }
+
+  if (maxPrice) {
+    where.price = { ...where.price, lte: parseFloat(maxPrice) };
+  }
+
+  const totalCount = await this.prisma.property.count({ where });
+  const totalPages = Math.ceil(totalCount / limit);
+
+  const properties = await this.prisma.property.findMany({
+    where,
+    include: {
+      currentOwner: {
+        select: { id: true, name: true }
+      },
+      likes: {
+        where: { userId },
+        select: { createdAt: true }
+      }
+    },
+    orderBy: {
+      likes: {
+        _count: 'desc' // Order by most liked first, or you can use createdAt
+      }
+    },
+    skip: (page - 1) * limit,
+    take: limit,
+  });
+
+  return {
+    properties,
+    pagination: {
+      totalCount,
+      totalPages,
+      currentPage: page,
+      limit,
+    },
+  };
+}
+
+/**
+ * Get properties with like status for a specific user
+ */
+async getPropertiesWithLikeStatus(userId: number | null, filters: any) {
+  const properties = await this.searchProperties(filters);
+
+  if (!userId) {
+    // If no user, return properties without like status
+    return {
+      ...properties,
+      properties: properties.properties.map(property => ({
+        ...property,
+        isLiked: false,
+        likesCount: property.likesCount || 0
+      }))
+    };
+  }
+
+  // Get user's liked property IDs
+  const userLikes = await this.prisma.propertyLike.findMany({
+    where: { userId },
+    select: { propertyId: true }
+  });
+
+  const likedPropertyIds = new Set(userLikes.map(like => like.propertyId));
+
+  return {
+    ...properties,
+    properties: properties.properties.map(property => ({
+      ...property,
+      isLiked: likedPropertyIds.has(property.id),
+      likesCount: property.likesCount || 0
+    }))
+  };
+}
 }
