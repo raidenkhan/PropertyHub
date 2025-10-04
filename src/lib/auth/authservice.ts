@@ -233,6 +233,7 @@ class AuthService {
       throw new Error('No access token available');
     }
 
+    // Make the actual fetch request with authorization header
     let response = await fetch(url, {
       ...options,
       headers: {

@@ -19,6 +19,7 @@ import { Badge } from "./ui/badge";
 import { messagesService } from '@/lib/api/messageService';
 import { chatService } from "@/lib/api/chatService";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useWishlist } from '@/lib/hooks/useWishlist';
 
 
 export function Header() {
@@ -29,8 +30,7 @@ export function Header() {
   const [showPayoutAlert, setShowPayoutAlert] = useState(false);
 
   const [unreadCount,setUnreadCount]=useState(0)
- 
-  const savedProperties = 5;
+  const { wishlistCount: savedProperties } = useWishlist();
 
   const handleLogout = async () => {
     await logout();
@@ -139,7 +139,7 @@ export function Header() {
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 hover:bg-accent relative"
-                      onClick={() => router.push('/saved')}
+                      onClick={() => router.push('/wishlist')}
                     >
                       <Heart className="w-4 h-4" />
                       {savedProperties > 0 && (
@@ -261,10 +261,10 @@ export function Header() {
                     variant="ghost"
                     size="sm"
                     className="hidden lg:flex items-center gap-1 hover:bg-accent relative px-2 xl:px-3"
-                    onClick={() => router.push('/saved')}
+                    onClick={() => router.push('/wishlist')}
                   >
                     <Heart className="w-4 h-4" />
-                    <span className="text-sm">Saved</span>
+                    <span className="text-sm">Wishlist</span>
                     {savedProperties > 0 && (
                       <Badge variant="secondary" className="ml-1 text-xs h-4 min-w-4 p-0 flex items-center justify-center">
                         {savedProperties}
@@ -505,10 +505,10 @@ export function Header() {
                       <Button 
                         variant="ghost" 
                         className="w-full justify-start h-12 px-3 relative"
-                        onClick={() => handleNavClick('/saved')}
+                        onClick={() => handleNavClick('/wishlist')}
                       >
                         <Heart className="w-4 h-4 mr-3" />
-                        <span className="flex-1 text-left">Saved Properties</span>
+                        <span className="flex-1 text-left">My Wishlist</span>
                         {savedProperties > 0 && (
                           <Badge variant="secondary" className="text-xs h-5 min-w-5 px-1.5">
                             {savedProperties > 99 ? '99+' : savedProperties}

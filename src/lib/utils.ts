@@ -6,32 +6,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // lib/utils/propertyConverter.ts
+import { Property, PropertyCoordinates, RawProperty } from "@/types/property"
 
-// Frontend types (your existing interface)
-interface Property {
-  id: string
-  title: string
-  location: string
-  price: string
-  type: string
-  status: "Available" | "Sold" | "Rent"
-  bedrooms?: number
-  bathrooms?: number
-  area?: string
-  rating: number
-  reviews: number
-  image: string
-  isLiked?: boolean
-  coordinates: { lat: number; lng: number }
-  description?: string
-  amenities?: string[]
-  currentOwner?: {
-    id: number
-    name: string
-  }
-}
-
-interface LocationCategory {
+export interface LocationCategory {
   id: string
   title: string
   location: string
@@ -42,37 +19,8 @@ interface LocationCategory {
   properties: Property[]
 }
 
-// Backend API response types (based on your data structure)
-interface BackendProperty {
-  id: number | string
-  propertyId?: string
-  title: string
-  description?: string
-  price: number | string
-  type: string
-  location: string
-  coordinates: { lat: number; lng: number }
-  images: string[]
-  amenities?: string[]
-  specifications?: object
-  bedrooms?: number
-  bathrooms?: number
-  area?: number | string
-  currentOwnerId?: number
-  listedById?: number
-  status: string
-  isVerified?: boolean
-  verifiedById?: number
-  verifiedAt?: string
-  createdAt?: string
-  updatedAt?: string
-  listedAt?: string | null
-  soldAt?: string | null
-  currentOwner?: {
-    id: number
-    name: string
-  }
-}
+// Use the shared RawProperty type for consistency
+type BackendProperty = RawProperty
 
 // Category response (for pre-grouped properties)
 interface CategoryResponse {
@@ -160,6 +108,7 @@ const convertBackendProperty = (backendProp: BackendProperty): Property => {
   
   return {
     id: backendProp.propertyId || backendProp.id.toString(),
+    propertyId: backendProp.propertyId,
     title: backendProp.title,
     location: backendProp.location,
     price: formatPrice(backendProp.price),
@@ -171,11 +120,23 @@ const convertBackendProperty = (backendProp: BackendProperty): Property => {
     rating: generateRating(),
     reviews: generateReviewCount(),
     image: backendProp.images?.[0] || getDefaultImage(backendProp.type),
+    images: backendProp.images,
     isLiked: false,
-    coordinates: backendProp.coordinates,
+    likesCount: 0, // Default to 0 for new properties
+    coordinates: backendProp.coordinates || { lat: 0, lng: 0 }, // Provide default coordinates
     description: backendProp.description,
     amenities: backendProp.amenities,
-    currentOwner: backendProp.currentOwner
+    specifications: backendProp.specifications,
+    currentOwner: backendProp.currentOwner,
+    currentOwnerId: backendProp.currentOwnerId,
+    listedById: backendProp.listedById,
+    isVerified: backendProp.isVerified,
+    verifiedById: backendProp.verifiedById,
+    verifiedAt: backendProp.verifiedAt,
+    createdAt: backendProp.createdAt,
+    updatedAt: backendProp.updatedAt,
+    listedAt: backendProp.listedAt,
+    soldAt: backendProp.soldAt
   }
 }
 

@@ -1,22 +1,7 @@
 "use client"
 import { PropertyCard } from "@/components/PropertyCard"
 import { motion } from "motion/react"
-
-interface Property {
-  id: string
-  title: string
-  location: string
-  price: string
-  type: string
-  status: "Available" | "Sold" | "Rent"
-  bedrooms?: number
-  bathrooms?: number
-  area?: string
-  rating: number
-  reviews: number
-  image: string
-  isLiked?: boolean
-}
+import { Property } from "@/types/property"
 
 interface PropertyGridProps {
   properties: Property[]

@@ -8,33 +8,8 @@ import { Button } from "../components/ui/button"
 import { Badge } from "../components/ui/badge"
 import { PropertyCard } from "@/components/PropertyCard"
 import { ResponsiveLocationButton, CategoryLocationDisplay } from "@/components/ui/responsive-text"
-
-interface Property {
-  id: string
-  title: string
-  location: string
-  price: string
-  type: string
-  status: "Available" | "Sold" | "Rent"
-  bedrooms?: number
-  bathrooms?: number
-  area?: string
-  rating: number
-  reviews: number
-  image: string
-  isLiked?: boolean
-}
-
-interface LocationCategory {
-  id: string
-  title: string
-  location: string
-  count: number
-  trending?: boolean
-  recent?: boolean
-  popular?: boolean
-  properties: Property[]
-}
+import { Property } from "@/types/property"
+import { LocationCategory } from "@/lib/utils"
 
 interface LocationCategoriesProps {
   onCategorySelect: (category: LocationCategory) => void
@@ -63,6 +38,7 @@ const locationCategories: LocationCategory[] = [
         rating: 4.8,
         reviews: 24,
         image: "https://images.unsplash.com/photo-1515263487990-61b07816b324?w=400&h=300&fit=crop",
+        coordinates: { lat: 6.4281, lng: 3.4219 },
         isLiked: false,
       },
       {
@@ -76,6 +52,7 @@ const locationCategories: LocationCategory[] = [
         rating: 4.7,
         reviews: 15,
         image: "https://images.unsplash.com/photo-1637095937545-f735f7a25121?w=400&h=300&fit=crop",
+        coordinates: { lat: 6.4281, lng: 3.4219 },
         isLiked: false,
       },
       {
@@ -91,6 +68,7 @@ const locationCategories: LocationCategory[] = [
         rating: 4.9,
         reviews: 42,
         image: "https://images.unsplash.com/photo-1564078516393-cf04bd966897?w=400&h=300&fit=crop",
+        coordinates: { lat: 6.4281, lng: 3.4219 },
         isLiked: true,
       },
     ],
@@ -115,6 +93,7 @@ const locationCategories: LocationCategory[] = [
         rating: 4.9,
         reviews: 31,
         image: "https://images.unsplash.com/photo-1675529734325-f735f7a25121?w=400&h=300&fit=crop",
+        coordinates: { lat: 6.4698, lng: 3.5852 },
         isLiked: false,
       },
       {
@@ -130,6 +109,7 @@ const locationCategories: LocationCategory[] = [
         rating: 4.6,
         reviews: 18,
         image: "https://images.unsplash.com/photo-1601622962666-d0b6d43a7ac7?w=400&h=300&fit=crop",
+        coordinates: { lat: 6.4698, lng: 3.5852 },
         isLiked: false,
       },
       {
@@ -145,6 +125,7 @@ const locationCategories: LocationCategory[] = [
         rating: 4.7,
         reviews: 25,
         image: "https://images.unsplash.com/photo-1541558869434-2840d308329a?w=400&h=300&fit=crop",
+        coordinates: { lat: 6.4698, lng: 3.5852 },
         isLiked: true,
       },
     ],
@@ -167,6 +148,7 @@ const locationCategories: LocationCategory[] = [
         rating: 4.5,
         reviews: 8,
         image: "https://images.unsplash.com/photo-1601622962666-d0b6d43a7ac7?w=400&h=300&fit=crop",
+        coordinates: { lat: 9.0765, lng: 7.3986 },
         isLiked: true,
       },
       {
@@ -182,6 +164,7 @@ const locationCategories: LocationCategory[] = [
         rating: 4.8,
         reviews: 12,
         image: "https://images.unsplash.com/photo-1564078516393-cf04bd966897?w=400&h=300&fit=crop",
+        coordinates: { lat: 9.0765, lng: 7.3986 },
         isLiked: false,
       },
       {
@@ -197,6 +180,7 @@ const locationCategories: LocationCategory[] = [
         rating: 4.6,
         reviews: 16,
         image: "https://images.unsplash.com/photo-1515263487990-61b07816b324?w=400&h=300&fit=crop",
+        coordinates: { lat: 9.0765, lng: 7.3986 },
         isLiked: false,
       },
     ],

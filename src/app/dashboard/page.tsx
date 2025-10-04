@@ -35,7 +35,7 @@ import { transactionService, TransactionHistory } from "@/lib/api/transactionSer
 import { messagesService } from "@/lib/api/messageService";
 import { notificationService } from "@/lib/api/notificationService";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { PerformanceMonitor } from "@/lib/performance";
+// import { PerformanceMonitor } from "@/lib/performance";
 
 // Lazy load tab components
 const OverviewTab = lazy(() => import("@/components/dashboard/tabs/OverviewTab").then(module => ({ default: module.OverviewTab })));
@@ -111,7 +111,7 @@ export default function UserDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        PerformanceMonitor.mark('dashboard-data-fetch-start');
+       // PerformanceMonitor.mark('dashboard-data-fetch-start');
         setIsLoading(true);
         
         // Fetch critical data first (properties and stats)
@@ -180,16 +180,16 @@ export default function UserDashboard() {
           unreadNotifications: unreadCount || 0,
         });
         
-        PerformanceMonitor.mark('dashboard-data-fetch-end');
-        const fetchDuration = PerformanceMonitor.measure(
-          'dashboard-data-fetch-duration', 
-          'dashboard-data-fetch-start', 
-          'dashboard-data-fetch-end'
-        );
+        // PerformanceMonitor.mark('dashboard-data-fetch-end');
+        // const fetchDuration = PerformanceMonitor.measure(
+        //   'dashboard-data-fetch-duration', 
+        //   'dashboard-data-fetch-start', 
+        //   'dashboard-data-fetch-end'
+        // );
         
-        if (fetchDuration && process.env.NODE_ENV === 'development') {
-          console.log(`Dashboard data fetch took ${fetchDuration.toFixed(2)}ms`);
-        }
+        // if (fetchDuration && process.env.NODE_ENV === 'development') {
+        //   console.log(`Dashboard data fetch took ${fetchDuration.toFixed(2)}ms`);
+        // }
       } catch (error) {
         console.error('Failed to fetch data:', error);
         toast({
@@ -207,7 +207,7 @@ export default function UserDashboard() {
   
   // Initialize performance tracking
   useEffect(() => {
-    PerformanceMonitor.trackWebVitals();
+    //PerformanceMonitor.trackWebVitals();
     
     // Register service worker for caching
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {

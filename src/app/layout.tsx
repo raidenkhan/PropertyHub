@@ -8,6 +8,7 @@ import { RouteTransition } from "@/components/system/RouteTransition";
 import { NotificationToastProvider } from '@/components/NotificationToast';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { PWAProvider } from '@/components/PWAProvider';
+import { WishlistProvider } from '@/lib/hooks/useWishlist';
 
 export const metadata: Metadata = {
   title: "PropertyHub - Real Estate Marketplace",
@@ -85,17 +86,19 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <NotificationProvider>
-              <NotificationToastProvider>
-                <PWAProvider>
-                  <RouteTransition>
-                    {children}
-                  </RouteTransition>
-                  <Toaster />
-                  <InstallPrompt />
-                </PWAProvider>
-              </NotificationToastProvider>
-            </NotificationProvider>
+            <WishlistProvider>
+              <NotificationProvider>
+                <NotificationToastProvider>
+                  <PWAProvider>
+                    <RouteTransition>
+                      {children}
+                    </RouteTransition>
+                    <Toaster />
+                    <InstallPrompt />
+                  </PWAProvider>
+                </NotificationToastProvider>
+              </NotificationProvider>
+            </WishlistProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

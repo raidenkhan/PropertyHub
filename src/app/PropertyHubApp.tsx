@@ -13,43 +13,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PropertyCard } from "@/components/PropertyCard"
 import { propertyService } from "@/lib/api/propertyService"
-import { convertPropertyData, groupPropertiesByLocationClusters } from "@/lib/utils"
+import { convertPropertyData, groupPropertiesByLocationClusters, LocationCategory } from "@/lib/utils"
 import { UnsortedPropertiesView } from "@/components/UnsortedPropertiesView"
 import { ResponsiveLocationButton, CategoryLocationDisplay } from "@/components/ui/responsive-text"
-
-interface Property {
-  id: string
-  title: string
-  location: string
-  price: string
-  type: string
-  status: "Available" | "Sold" | "Rent"
-  bedrooms?: number
-  bathrooms?: number
-  area?: string
-  rating: number
-  reviews: number
-  image: string
-  isLiked?: boolean
-  coordinates: { lat: number; lng: number }
-  description?: string
-  amenities?: string[]
-  currentOwner?: {
-    id: number
-    name: string
-  }
-}
-
-interface LocationCategory {
-  id: string
-  title: string
-  location: string
-  count: number
-  trending?: boolean
-  recent?: boolean
-  popular?: boolean
-  properties: Property[]
-}
+import { Property, PropertyCoordinates } from "@/types/property"
 
 // Helper function to parse price string to number for comparison
 const parsePriceToNumber = (price: string): number => {

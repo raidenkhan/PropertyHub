@@ -1,55 +1,128 @@
 "use client"
 
-import { Heart, MapPin, Star, Eye, MessageCircle } from "lucide-react"
+import { Heart, MapPin, Star, Eye, MessageCircle, Loader2 } from "lucide-react"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 import { Card, CardContent } from "./ui/card"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useState } from "react"
+import { propertyLikesService } from "@/lib/api/propertyLikesService"
+import { toast } from "@/hooks/use-toast"
+import { useAuth } from "@/lib/auth/authContext"
+import { useWishlist } from "@/lib/hooks/useWishlist"
+import { PropertyCardProps } from "@/types/property"
 
-interface PropertyCardProps {
-  id: string
-  title: string
-  location: string
-  price: string
-  type?: string
-  status: "Available" | "Sold" | "Rent" | "Commercial" | "House"
-  bedrooms?: number
-  bathrooms?: number
-  area?: string
-  rating: number
-  reviews: number
-  image: string
-  isLiked?: boolean
-  onLike?: (id: string) => void
- 
-
-  delay?: number
-  viewMode?: "grid" | "list"
-}
-
-export function PropertyCard({
-  id,
-  title,
-  location,
-  price,
-  type,
-  status,
-  bedrooms,
-  bathrooms,
-  area,
-  rating,
-  reviews,
-  image,
-  isLiked = false,
-  onLike,
- 
-
-  delay = 0,
-  viewMode = "grid",
-}: PropertyCardProps) {
+export function PropertyCard(props: PropertyCardProps) {
+  const {
+    id,
+    propertyId,
+    title,
+    location,
+    price,
+    type = "Property", // Default type if not provided
+    status,
+    bedrooms,
+    bathrooms,
+    area,
+    rating,
+    reviews,
+    image,
+    images,
+    isLiked = false,
+    likesCount = 0,
+    onLike,
+    delay = 0,
+    viewMode = "grid",
+    description,
+    amenities,
+    specifications,
+    currentOwner,
+    isVerified,
+    coordinates,
+  } = props;
   const router = useRouter()
+  const { user } = useAuth()
+  const { refreshWishlistCount } = useWishlist()
+  const [liked, setLiked] = useState(isLiked)
+  const [likes, setLikes] = useState(likesCount)
+  const [isLiking, setIsLiking] = useState(false)
+  
+  // Handle like/unlike functionality
+  const handleLike = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!user) {
+      toast({
+        title: "🔐 Authentication Required",
+        description: "Please log in to like properties",
+      })
+      router.push('/auth')
+      return
+    }
+    
+    if (isLiking) return
+    
+    try {
+      setIsLiking(true)
+      
+      // Optimistic update
+      const newLiked = !liked
+      const newLikes = newLiked ? likes + 1 : likes - 1
+      
+      setLiked(newLiked)
+      setLikes(newLikes)
+      
+      // Call API - use propertyId if available, otherwise fallback to id
+      const idToUse = propertyId || id
+      const result = await propertyLikesService.toggleLike(idToUse)
+      
+      // Update with actual result
+      setLiked(result.liked)
+      setLikes(result.likesCount)
+      
+      // Call parent onLike if provided
+      onLike?.(id)
+      
+      // Refresh wishlist count in header
+      refreshWishlistCount()
+      
+      // Show success toast
+      toast({
+        title: result.liked ? "❤️ Added to Wishlist" : "💔 Removed from Wishlist",
+        description: result.liked 
+          ? "Property saved to your wishlist" 
+          : "Property removed from your wishlist",
+      })
+      
+    } catch (error) {
+      // Revert optimistic update on error
+      setLiked(liked)
+      setLikes(likes)
+      
+      console.error('Failed to toggle like:', error)
+      
+      // Handle different error types gracefully
+      let errorMessage = "Failed to update wishlist. Please try again."
+      if (error instanceof Error) {
+        if (error.message.includes('404') || error.message.includes('Not Found')) {
+          errorMessage = "Wishlist feature is not yet available. Please try again later."
+        } else if (error.message.includes('Authentication expired')) {
+          errorMessage = "Please log in to save properties to your wishlist."
+        }
+      }
+      
+      toast({
+        title: "❌ Error",
+        description: errorMessage,
+      })
+    } finally {
+      setIsLiking(false)
+    }
+  }
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Available":
@@ -87,22 +160,34 @@ export function PropertyCard({
                   onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
                   loading="lazy"
                 />
-                {/* Like Button */}
+                {/* Enhanced Like Button */}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 rounded-full shadow-sm"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onLike?.(id);
-                  }}
-                  aria-label={isLiked ? "Unlike property" : "Like property"}
+                  className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 rounded-full shadow-sm group"
+                  onClick={handleLike}
+                  disabled={isLiking}
+                  aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
                 >
-                  <Heart
-                    className={`w-4 h-4 transition-colors ${isLiked ? "fill-red-500 text-red-500" : "text-gray-600 dark:text-gray-400"}`}
-                  />
+                  {isLiking ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-gray-600 dark:text-gray-400" />
+                  ) : (
+                    <Heart
+                      className={`w-4 h-4 transition-all duration-200 group-hover:scale-110 ${
+                        liked 
+                          ? "fill-red-500 text-red-500 animate-pulse" 
+                          : "text-gray-600 dark:text-gray-400 group-hover:text-red-500"
+                      }`}
+                    />
+                  )}
                 </Button>
+                
+                {/* Likes Count Badge */}
+                {likes > 0 && (
+                  <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                    {likes} {likes === 1 ? 'like' : 'likes'}
+                  </div>
+                )}
               </div>
 
               {/* Content Container */}
@@ -176,22 +261,34 @@ export function PropertyCard({
               />
             </div>
             
-            {/* Floating Like Button - Airbnb style */}
+            {/* Enhanced Floating Like Button - Airbnb style */}
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 hover:scale-110 transition-all duration-200 rounded-full shadow-sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onLike?.(id);
-              }}
-              aria-label={isLiked ? "Unlike property" : "Like property"}
+              className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 hover:scale-110 transition-all duration-200 rounded-full shadow-sm group"
+              onClick={handleLike}
+              disabled={isLiking}
+              aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
             >
-              <Heart
-                className={`w-4 h-4 transition-all duration-200 ${isLiked ? "fill-red-500 text-red-500 scale-110" : "text-gray-600 dark:text-gray-400"}`}
-              />
+              {isLiking ? (
+                <Loader2 className="w-4 h-4 animate-spin text-gray-600 dark:text-gray-400" />
+              ) : (
+                <Heart
+                  className={`w-4 h-4 transition-all duration-200 ${
+                    liked 
+                      ? "fill-red-500 text-red-500 scale-110 animate-pulse" 
+                      : "text-gray-600 dark:text-gray-400 group-hover:text-red-500 group-hover:scale-110"
+                  }`}
+                />
+              )}
             </Button>
+            
+            {/* Likes Count Badge */}
+            {likes > 0 && (
+              <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                {likes} {likes === 1 ? 'like' : 'likes'}
+              </div>
+            )}
 
             {/* Status Badge - Top left, more subtle */}
             <Badge
