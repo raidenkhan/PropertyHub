@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PropertyHub Icon Generator</title>
+</head>
+<body>
+    <h1>PropertyHub PWA Icons Generator</h1>
+    <p>This will generate PWA icons for different sizes</p>
+    <button onclick="generateIcons()">Generate Icons</button>
+    <div id="download-area"></div>
+
+    <script>
+        function generateIcons() {
+            const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+            const downloadArea = document.getElementById('download-area');
+            downloadArea.innerHTML = '';
+
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                // Create gradient background
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#3b82f6');
+                gradient.addColorStop(1, '#8b5cf6');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+
+                // Add rounded corners
+                ctx.globalCompositeOperation = 'destination-in';
+                ctx.beginPath();
+                ctx.roundRect(0, 0, size, size, size * 0.2);
+                ctx.fill();
+
+                // Reset composite operation and draw the "P"
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = 'white';
+                ctx.font = `bold ${size * 0.5}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('P', size / 2, size / 2);
+
+                // Create download link
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `icon-${size}x${size}.png`;
+                    link.textContent = `Download ${size}x${size} icon`;
+                    link.style.display = 'block';
+                    link.style.margin = '5px';
+                    downloadArea.appendChild(link);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

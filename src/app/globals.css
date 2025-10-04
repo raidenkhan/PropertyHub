@@ -237,3 +237,68 @@ html {
 
 .animate-fade-in { animation: fade-in 0.35s ease both }
 .animate-fade-up { animation: fade-up 0.35s ease both }
+
+/* PWA Splash Screen & Mode Styles */
+/* PWA Mode Styles */
+body.pwa-mode {
+  /* Add any PWA-specific base styles here */
+  --pwa-safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --pwa-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body.standalone-mode {
+  /* Styles for when running in standalone mode */
+  padding-top: var(--pwa-safe-area-inset-top);
+  padding-bottom: var(--pwa-safe-area-inset-bottom);
+}
+
+/* Splash Screen Animations */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInFromBottom {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.5s ease-out;
+}
+
+.animate-slide-in-bottom {
+  animation: slideInFromBottom 0.6s ease-out;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}

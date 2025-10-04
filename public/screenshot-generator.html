@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screenshot Generator</title>
+</head>
+<body>
+    <h1>PropertyHub Screenshot Generator</h1>
+    <p>This tool will generate placeholder screenshots for your PWA.</p>
+    
+    <div id="output"></div>
+    
+    <script>
+        function createScreenshot(width, height, title, filename) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#8b5cf6');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Add title
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('PropertyHub', width/2, height/2 - 50);
+            
+            ctx.font = '24px Arial';
+            ctx.fillText(title, width/2, height/2 + 20);
+            ctx.fillText(`${width} x ${height}`, width/2, height/2 + 60);
+            
+            // Add some UI elements to make it look like an app
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(20, 20, width - 40, 80); // Header bar
+            
+            ctx.fillRect(20, 120, (width - 40) / 3 - 10, 100); // Card 1
+            ctx.fillRect(20 + (width - 40) / 3, 120, (width - 40) / 3 - 10, 100); // Card 2
+            ctx.fillRect(20 + 2 * (width - 40) / 3, 120, (width - 40) / 3 - 10, 100); // Card 3
+            
+            return canvas;
+        }
+        
+        function generateScreenshots() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<h2>Generated Screenshots:</h2>';
+            
+            const screenshots = [
+                { width: 1280, height: 720, title: 'Desktop View', filename: 'desktop-screenshot.png' },
+                { width: 750, height: 1334, title: 'Mobile View', filename: 'mobile-screenshot.png' }
+            ];
+            
+            screenshots.forEach(({ width, height, title, filename }) => {
+                const canvas = createScreenshot(width, height, title, filename);
+                
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = canvas.toDataURL('image/png');
+                link.textContent = `Download ${title} (${width}x${height})`;
+                link.style.display = 'block';
+                link.style.margin = '5px 0';
+                
+                output.appendChild(link);
+                
+                // Preview
+                const preview = canvas.cloneNode();
+                preview.getContext('2d').drawImage(canvas, 0, 0);
+                preview.style.border = '1px solid #ccc';
+                preview.style.margin = '10px 0';
+                preview.style.maxWidth = '300px';
+                preview.style.height = 'auto';
+                output.appendChild(preview);
+            });
+        }
+        
+        generateScreenshots();
+    </script>
+</body>
+</html>

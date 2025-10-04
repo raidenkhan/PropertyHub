@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Generator</title>
+</head>
+<body>
+    <h1>PropertyHub Icon Generator</h1>
+    <p>This tool will generate PNG icons from your SVG icon.</p>
+    
+    <div id="output"></div>
+    
+    <script>
+        const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="102" ry="102" fill="url(#grad1)"/>
+  <text x="256" y="320" font-family="Arial, sans-serif" font-size="300" font-weight="bold" text-anchor="middle" fill="white">P</text>
+</svg>`;
+
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        
+        function generateIcons() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<h2>Generated Icons:</h2>';
+            
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                const img = new Image();
+                const svg = new Blob([svgContent], {type: 'image/svg+xml;charset=utf-8'});
+                const url = URL.createObjectURL(svg);
+                
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, size, size);
+                    
+                    const link = document.createElement('a');
+                    link.download = `icon-${size}x${size}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.textContent = `Download ${size}x${size} icon`;
+                    link.style.display = 'block';
+                    link.style.margin = '5px 0';
+                    
+                    output.appendChild(link);
+                    
+                    // Also show the canvas
+                    const preview = canvas.cloneNode();
+                    preview.getContext('2d').drawImage(canvas, 0, 0);
+                    preview.style.border = '1px solid #ccc';
+                    preview.style.margin = '5px';
+                    preview.style.maxWidth = '64px';
+                    preview.style.maxHeight = '64px';
+                    output.appendChild(preview);
+                    
+                    URL.revokeObjectURL(url);
+                };
+                
+                img.src = url;
+            });
+        }
+        
+        // Generate icons on page load
+        generateIcons();
+    </script>
+</body>
+</html>
