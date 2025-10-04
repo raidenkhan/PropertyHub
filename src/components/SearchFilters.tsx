@@ -3,7 +3,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Filter, Grid3X3, List, Home, Building, TreePine, Search } from "lucide-react"
+import { Filter, Grid3X3, List, Home, Building, TreePine, Search, ChevronUp, ChevronDown } from "lucide-react"
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 import { Input } from "./ui/input"
@@ -30,6 +30,13 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
   const [propertyType, setPropertyType] = useState("Any type")
   const [priceRange, setPriceRange] = useState("Any price")
   const [bedrooms, setBedrooms] = useState("Any")
+  const [isExpanded, setIsExpanded] = useState(() => {
+    // Start collapsed on mobile, expanded on desktop
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768
+    }
+    return true
+  })
 
   const propertyTypes = [
     { id: "apartment", label: "APPARTMENT", icon: Building },
@@ -142,7 +149,116 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
       transition={{ duration: 0.6, delay: 0.2 }}
       className="bg-background/70 backdrop-blur-md border-b border-border sticky top-[73px] z-40 dark:bg-gray-900/70 dark:border-gray-700"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 ">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        {/* Collapsible Header */}
+        <div className="flex items-center justify-between py-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className={`w-4 h-4 ${activeFilters.length > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`} />
+              <h3 className="text-sm font-medium text-foreground dark:text-gray-200">
+                Search & Filters
+              </h3>
+            </div>
+            {activeFilters.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
+                  {activeFilters.length} active
+                </Badge>
+                {!isExpanded && activeFilters.length > 0 && (
+                  <div className="hidden sm:flex items-center gap-1">
+                    {activeFilters.slice(0, 3).map((filter) => (
+                      <Badge
+                        key={filter}
+                        variant="outline"
+                        className="text-xs px-2 py-1 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700"
+                      >
+                        {filter}
+                      </Badge>
+                    ))}
+                    {activeFilters.length > 3 && (
+                      <span className="text-xs text-muted-foreground">+{activeFilters.length - 3} more</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2 text-sm hover:bg-accent dark:hover:bg-gray-700"
+          >
+            {isExpanded ? 'Hide Filters' : 'Show Filters'}
+            {isExpanded ? 
+              <ChevronUp className="w-4 h-4" /> : 
+              <ChevronDown className="w-4 h-4" />
+            }
+          </Button>
+        </div>
+
+        {/* Compact Search Bar (Always Visible When Collapsed) */}
+        {!isExpanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+            className="pb-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <Input
+                  type="text"
+                  placeholder="Search locations..."
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="h-9 px-3"
+                >
+                  <Filter className="w-4 h-4" />
+                  Clear
+                </Button>
+                <div className="flex items-center gap-1 bg-background rounded-lg p-1 border">
+                  <Button
+                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => onViewModeChange("grid")}
+                    className="w-8 h-7 p-0"
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => onViewModeChange("list")}
+                    className="w-8 h-7 p-0"
+                  >
+                    <List className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Collapsible Content */}
+        <motion.div
+          initial={false}
+          animate={{ 
+            height: isExpanded ? 'auto' : 0,
+            opacity: isExpanded ? 1 : 0
+          }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          className="overflow-hidden"
+        >
+          <div className="pb-4">
         {/* Mobile-Friendly Search Bar */}
         <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-0 mb-4 sm:mb-6 ">
           <motion.div
@@ -485,6 +601,8 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
             </Button>
           </motion.div>
         )}
+          </div>
+        </motion.div>
       </div>
     </motion.div>
   )

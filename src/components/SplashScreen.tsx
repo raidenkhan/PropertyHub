@@ -41,13 +41,13 @@ export function SplashScreen({ isVisible, onComplete, duration = 2500 }: SplashS
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-primary via-primary to-purple-600 overflow-hidden"
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 overflow-hidden"
         >
           {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-20 left-20 w-32 h-32 bg-white/20 rounded-full blur-xl animate-pulse" />
-            <div className="absolute bottom-32 right-16 w-48 h-48 bg-white/10 rounded-full blur-xl animate-pulse delay-1000" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-2xl animate-pulse delay-500" />
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-20 left-20 w-32 h-32 bg-blue-400/30 rounded-full blur-xl animate-pulse" />
+            <div className="absolute bottom-32 right-16 w-48 h-48 bg-purple-400/20 rounded-full blur-xl animate-pulse delay-1000" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/10 rounded-full blur-2xl animate-pulse delay-500" />
           </div>
 
           {/* Main Content */}
@@ -74,9 +74,9 @@ export function SplashScreen({ isVisible, onComplete, duration = 2500 }: SplashS
               }}
               className="mb-6"
             >
-              <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center border border-white/30 shadow-2xl">
-                <div className="w-16 h-16 bg-gradient-to-br from-white to-white/80 rounded-2xl flex items-center justify-center">
-                  <span className="text-3xl font-black text-primary">P</span>
+              <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/20 shadow-2xl">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-3xl font-black text-white">P</span>
                 </div>
               </div>
             </motion.div>

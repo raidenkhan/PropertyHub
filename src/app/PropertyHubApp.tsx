@@ -569,91 +569,52 @@ export default function App() {
         selectedCategory={selectedCategory ? selectedCategory : undefined}
       />
 
-      {/* Enhanced Footer */}
+      {/* Compact Footer */}
       <motion.footer
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.2 }}
-        className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-white py-20 mt-20 relative overflow-hidden"
+        className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-gray-900 dark:to-gray-950 text-white py-12 mt-16"
       >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23ffffff' fillOpacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}
-          />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 relative">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 1.4 }}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-xl">P</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-xl text-white">PropertyHub</h3>
-                  <p className="text-sm text-gray-400 dark:text-gray-300">Real Estate Marketplace</p>
-                </div>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            {/* Brand Section */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">P</span>
               </div>
-              <p className="text-gray-300 dark:text-gray-200 text-sm leading-relaxed">
-                Your trusted partner in finding the perfect property across Nigeria. We connect dreams with reality.
-              </p>
-            </motion.div>
+              <div>
+                <h3 className="font-bold text-lg text-white">PropertyHub</h3>
+                <p className="text-sm text-gray-400">Nigeria's Leading Real Estate Platform</p>
+              </div>
+            </div>
 
-            {[
-              {
-                title: "Explore",
-                links: ["Buy Properties", "Rent Properties", "Commercial Spaces", "Land & Plots"],
-              },
-              {
-                title: "Company",
-                links: ["About Us", "Contact", "Careers", "Press"],
-              },
-              {
-                title: "Support",
-                links: ["Help Center", "Safety Center", "Community Guidelines", "Terms of Service"],
-              },
-            ].map((section, index) => (
-              <motion.div
-                key={section.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 1.5 + index * 0.1 }}
-              >
-                <h4 className="font-semibold text-lg text-white mb-6">{section.title}</h4>
-                <ul className="space-y-3">
-                  {section.links.map((link) => (
-                    <li key={link}>
-                      <a
-                        href="#"
-                        className="text-gray-300 hover:text-white transition-colors text-sm hover:underline dark:text-gray-200 dark:hover:text-gray-50"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
+            {/* Quick Links */}
+            <div className="flex flex-wrap justify-center gap-6 text-sm">
+              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+                Buy Properties
+              </a>
+              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+                Rent Properties
+              </a>
+              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+                About Us
+              </a>
+              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+                Contact
+              </a>
+              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+                Help Center
+              </a>
+            </div>
           </div>
 
-          <motion.div
-            className="border-t border-gray-700 dark:border-gray-600 mt-16 pt-8 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 1.8 }}
-          >
-            <p className="text-gray-400 dark:text-gray-300 text-sm">
+          {/* Copyright */}
+          <div className="border-t border-gray-700 mt-8 pt-6 text-center">
+            <p className="text-gray-400 text-sm">
               &copy; 2024 PropertyHub. All rights reserved. Made with ❤️ in Nigeria.
             </p>
-          </motion.div>
+          </div>
         </div>
       </motion.footer>
     </div>
