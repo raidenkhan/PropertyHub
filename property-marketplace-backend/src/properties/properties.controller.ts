@@ -331,7 +331,7 @@ async togglePropertyLike(
 @Get(':id/liked')
 @UseGuards(JwtAuthGuard)
 async isPropertyLiked(
-  @Param('id', ParseIntPipe) id: number,
+  @Param('id') id: string,
   @Req() req
 ) {
   try {
@@ -460,7 +460,7 @@ async findOne(@Param('id') id: string, @Req() req?) {
     if (req?.user?.userId) {
       const isLiked = await this.propertyService.isPropertyLiked(
         req.user.userId,
-        property.id
+        property.propertyId
       );
       
       return {
