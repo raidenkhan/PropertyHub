@@ -9,6 +9,7 @@ import { NotificationToastProvider } from '@/components/NotificationToast';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { PWAProvider } from '@/components/PWAProvider';
 import { WishlistProvider } from '@/lib/hooks/useWishlist';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 
 export const metadata: Metadata = {
   title: "PropertyHub - Real Estate Marketplace",
@@ -93,6 +94,7 @@ export default function RootLayout({
                     <RouteTransition>
                       {children}
                     </RouteTransition>
+                    <MobileBottomNav />
                     <Toaster />
                     <InstallPrompt />
                   </PWAProvider>

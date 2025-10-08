@@ -108,7 +108,7 @@ export function Header() {
 
             {/* Center Section - Adaptive */}
             <div className="flex-1 flex items-center justify-center px-2 sm:px-4">
-              {/* Mobile Quick Actions */}
+              {/* Mobile Quick Search - Simplified since main nav is in bottom nav */}
               <div className="flex md:hidden items-center gap-1">
                 <Button
                   variant="ghost"
@@ -118,38 +118,6 @@ export function Header() {
                 >
                   <Search className="w-4 h-4" />
                 </Button>
-                
-                {user && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-accent relative"
-                      onClick={() => router.push('/messages')}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      {unreadCount > 0 && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                          <span className="text-xs text-white font-bold">{unreadCount > 9 ? '9+' : unreadCount}</span>
-                        </div>
-                      )}
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-accent relative"
-                      onClick={() => router.push('/wishlist')}
-                    >
-                      <Heart className="w-4 h-4" />
-                      {savedProperties > 0 && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                          <span className="text-xs text-white font-bold">{savedProperties > 9 ? '9+' : savedProperties}</span>
-                        </div>
-                      )}
-                    </Button>
-                  </>
-                )}
               </div>
 
               {/* Desktop Search Bar */}

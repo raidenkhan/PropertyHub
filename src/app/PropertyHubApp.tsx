@@ -559,12 +559,12 @@ export default function App() {
         selectedCategory={selectedCategory ? selectedCategory : undefined}
       />
 
-      {/* Compact Footer */}
+      {/* Compact Footer - Hidden on mobile when bottom nav is present */}
       <motion.footer
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.2 }}
-        className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-gray-900 dark:to-gray-950 text-white py-12 mt-16"
+        className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-gray-900 dark:to-gray-950 text-white py-12 mt-16 lg:block hidden"
       >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
