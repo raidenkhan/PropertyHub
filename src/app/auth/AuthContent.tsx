@@ -486,6 +486,9 @@ export default function AuthPage() {
                   className="mb-4"
                 />
               </div>
+              
+              {/* Mobile Navigation Safe Area */}
+              <div className="h-4 lg:hidden mobile-safe-bottom" />
             </div>
           </div>
         </div>

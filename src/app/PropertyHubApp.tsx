@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PropertyCard } from "@/components/PropertyCard"
 import { propertyService } from "@/lib/api/propertyService"
-import { convertPropertyData, groupPropertiesByLocationClusters, LocationCategory } from "@/lib/utils"
+import { convertPropertyData, groupPropertiesByLocationClusters, LocationCategory, extractLocationKey, ensurePropertyFormat } from "@/lib/utils"
+import { useGlobalCache } from "@/contexts/GlobalCacheContext"
 import { UnsortedPropertiesView } from "@/components/UnsortedPropertiesView"
 import { ResponsiveLocationButton, CategoryLocationDisplay } from "@/components/ui/responsive-text"
 import { Property, PropertyCoordinates } from "@/types/property"
@@ -288,51 +289,89 @@ export default function App() {
     bedrooms: "",
   })
 
-  // State for API data
+  // Use global cache for cross-page data persistence
+  const { allProperties: cachedProperties, fetchAllProperties, allPropertiesLoading, getCacheAge, updateProperty } = useGlobalCache()
+  
+  // State for processed data
   const [categories, setCategories] = useState<LocationCategory[]>([])
   const [clusteredCategories, setClusteredCategories] = useState<LocationCategory[]>([])
-  const [allProperties, setAllProperties] = useState<Property[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Use cached properties with proper formatting or empty array
+  const allProperties = cachedProperties.map(prop => ensurePropertyFormat(prop))
 
-  // Fetch and convert data on component mount
+  // Initialize cache and process data when available
   useEffect(() => {
-    const fetchPropertyData = async () => {
+    const initializeData = async () => {
       try {
-        setLoading(true)
         setError(null)
         
-        // Fetch data from your API
-        const response = await propertyService.getAllProperties()
-        const apiData = response.data
+        // Check cache age - force refresh if older than 10 minutes
+        const cacheAge = getCacheAge('allProperties')
+        const shouldForceRefresh = cacheAge ? cacheAge > 10 * 60 * 1000 : false // 10 minutes
         
-        console.log('Raw API data:', apiData)
+        // Fetch from cache (will load from localStorage if not in memory)
+        await fetchAllProperties(shouldForceRefresh)
         
-        // Convert mixed data format to unified structure
-        const { categories: convertedCategories, allProperties: convertedProperties } = 
-          convertPropertyData(apiData)
-        
-        console.log('Converted categories:', convertedCategories)
-        console.log('Converted properties:', convertedProperties)
-        
-        setCategories(convertedCategories)
-        setAllProperties(convertedProperties)
-        
-        // Generate clustered categories for location-based sorting
-        const clustered = groupPropertiesByLocationClusters(convertedProperties)
-        setClusteredCategories(clustered)
+        console.log('✅ Using cached properties:', cachedProperties.length, 'properties')
+        if (cacheAge) {
+          console.log('📅 Cache age:', Math.round(cacheAge / 1000), 'seconds')
+        }
         
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch properties'
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load properties'
         setError(errorMessage)
         console.error('Property data fetch error:', err)
-      } finally {
-        setLoading(false)
       }
     }
 
-    fetchPropertyData()
-  }, [])
+    initializeData()
+  }, [fetchAllProperties, getCacheAge])
+  
+  // Process cached data when it changes
+  useEffect(() => {
+    if (cachedProperties.length > 0) {
+      console.log('🔄 Processing cached properties:', cachedProperties.length)
+      
+      // Data is already converted in cache context, so just group into categories by location
+      // Create simple location-based categories from the converted properties
+      const locationMap = new Map<string, LocationCategory>()
+      
+      cachedProperties.forEach((prop) => {
+        const property = ensurePropertyFormat(prop)
+        const locationKey = extractLocationKey(property.location)
+        let category = locationMap.get(locationKey)
+        
+        if (!category) {
+          // Extract city name for display
+          const cityName = property.location.split(',').pop()?.trim() || property.location
+          category = {
+            id: locationKey,
+            title: `Properties in ${cityName}`,
+            location: property.location,
+            count: 0,
+            properties: []
+          }
+          locationMap.set(locationKey, category)
+        }
+        
+        category.properties.push(property)
+        category.count++
+      })
+      
+      const locationCategories = Array.from(locationMap.values())
+      console.log('📊 Generated categories:', locationCategories.length)
+      
+      setCategories(locationCategories)
+      
+      // Generate clustered categories for location-based sorting
+      const formattedProperties = cachedProperties.map(prop => ensurePropertyFormat(prop))
+      const clustered = groupPropertiesByLocationClusters(formattedProperties)
+      setClusteredCategories(clustered)
+      
+      console.log('🗺️ Generated clustered categories:', clustered.length)
+    }
+  }, [cachedProperties])
 
   // Memoized filtered properties
   const filteredProperties = useMemo(() => {
@@ -343,18 +382,36 @@ export default function App() {
   const handleFiltersChange = useCallback((newFilters: FilterOptions) => {
     setFilters(newFilters)
   }, [])
+  
+  // Loading state combines cache loading and data processing
+  const loading = allPropertiesLoading || (cachedProperties.length === 0 && !error)
 
   const handleLike = (id: string) => {
-    setAllProperties((prev) =>
-      prev.map((property) => (property.id === id ? { ...property, isLiked: !property.isLiked } : property))
-    )
+    // Find the current property to toggle its liked status
+    const currentProperty = allProperties.find(p => p.id === id)
+    if (!currentProperty) return
     
-    // Also update in categories
+    const newIsLiked = !currentProperty.isLiked
+    
+    // Update the property in cache (this will update allProperties automatically)
+    updateProperty(id, { isLiked: newIsLiked })
+    
+    // Also update in categories state
     setCategories((prev) =>
       prev.map((category) => ({
         ...category,
         properties: category.properties.map((property) =>
-          property.id === id ? { ...property, isLiked: !property.isLiked } : property
+          property.id === id ? { ...property, isLiked: newIsLiked } : property
+        ),
+      }))
+    )
+    
+    // Update clustered categories as well
+    setClusteredCategories((prev) =>
+      prev.map((category) => ({
+        ...category,
+        properties: category.properties.map((property) =>
+          property.id === id ? { ...property, isLiked: newIsLiked } : property
         ),
       }))
     )

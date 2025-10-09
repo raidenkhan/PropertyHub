@@ -119,8 +119,8 @@ const convertBackendProperty = (backendProp: BackendProperty): Property => {
     area: backendProp.area ? `${backendProp.area}sqm` : undefined,
     rating: generateRating(),
     reviews: generateReviewCount(),
-    image: backendProp.images?.[0] || getDefaultImage(backendProp.type),
-    images: backendProp.images,
+    image: getPropertyImage(backendProp),
+    images: backendProp.images || [],
     isLiked: false,
     likesCount: 0, // Default to 0 for new properties
     coordinates: backendProp.coordinates || { lat: 0, lng: 0 }, // Provide default coordinates
@@ -148,6 +148,61 @@ const convertFrontendProperty = (prop: Property): Property => {
     reviews: prop.reviews || generateReviewCount(),
     isLiked: prop.isLiked || false,
     price: prop.price || '₦0'
+  }
+}
+
+// Ensure property has proper formatting (for cached/retrieved properties)
+export const ensurePropertyFormat = (prop: any): Property => {
+  // If it's already a properly formatted Property, just ensure all fields are present
+  if (prop && typeof prop.id === 'string' && prop.price && prop.price.includes('₦')) {
+    return {
+      ...prop,
+      rating: prop.rating || generateRating(),
+      reviews: prop.reviews || generateReviewCount(),
+      isLiked: prop.isLiked || false,
+      coordinates: prop.coordinates || { lat: 0, lng: 0 },
+      image: prop.image || getDefaultImage(prop.type || 'House'),
+      images: prop.images || [],
+    }
+  }
+  
+  // If it's a raw property or partially converted, do full conversion
+  if (prop && typeof prop.id === 'number') {
+    return convertBackendProperty(prop as BackendProperty)
+  }
+  
+  // Handle string IDs but missing formatting
+  return {
+    id: prop.id || prop.propertyId || Math.random().toString(),
+    propertyId: prop.propertyId,
+    title: prop.title || 'Untitled Property',
+    location: prop.location || 'Unknown Location',
+    price: prop.price && prop.price.includes('₦') ? prop.price : formatPrice(prop.price || 0),
+    type: normalizePropertyType(prop.type || 'House'),
+    status: normalizeStatus(prop.status || 'Available'),
+    bedrooms: prop.bedrooms,
+    bathrooms: prop.bathrooms,
+    area: prop.area && typeof prop.area === 'string' ? prop.area : prop.area ? `${prop.area}sqm` : undefined,
+    rating: prop.rating || generateRating(),
+    reviews: prop.reviews || generateReviewCount(),
+    image: prop.image || getDefaultImage(prop.type || 'House'),
+    images: prop.images || [],
+    isLiked: prop.isLiked || false,
+    likesCount: prop.likesCount || 0,
+    coordinates: prop.coordinates || { lat: 0, lng: 0 },
+    description: prop.description,
+    amenities: prop.amenities,
+    specifications: prop.specifications,
+    currentOwner: prop.currentOwner,
+    currentOwnerId: prop.currentOwnerId,
+    listedById: prop.listedById,
+    isVerified: prop.isVerified,
+    verifiedById: prop.verifiedById,
+    verifiedAt: prop.verifiedAt,
+    createdAt: prop.createdAt,
+    updatedAt: prop.updatedAt,
+    listedAt: prop.listedAt,
+    soldAt: prop.soldAt
   }
 }
 
@@ -333,12 +388,58 @@ const groupPropertiesByLocationClusters = (properties: Property[]): LocationCate
   })
 }
 
-const generateRating = (): number => {
+const generateRating = (seed?: string): number => {
+  if (seed) {
+    // Generate deterministic rating based on seed
+    const hash = seed.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
+    const random = Math.abs(hash % 1000) / 1000; // Convert to 0-1
+    return Math.round((random * (4.9 - 4.0) + 4.0) * 10) / 10
+  }
   return Math.round((Math.random() * (4.9 - 4.0) + 4.0) * 10) / 10
 }
 
-const generateReviewCount = (): number => {
+const generateReviewCount = (seed?: string): number => {
+  if (seed) {
+    // Generate deterministic review count based on seed
+    const hash = seed.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
+    const random = Math.abs(hash % 1000) / 1000; // Convert to 0-1
+    return Math.floor(random * 50) + 5
+  }
   return Math.floor(Math.random() * 50) + 5
+}
+
+const getPropertyImage = (backendProp: BackendProperty): string => {
+  // Priority order for getting images:
+  // 1. First image from images array
+  // 2. imageUrl property (if exists)
+  // 3. image property (if exists)
+  // 4. Default image based on property type
+  
+  // Check images array first
+  if (backendProp.images && backendProp.images.length > 0) {
+    const firstImage = backendProp.images[0]
+    if (firstImage && firstImage.trim() !== '') {
+      console.log('Using image from images array:', firstImage)
+      return firstImage
+    }
+  }
+  
+  // Check imageUrl property
+  if ((backendProp as any).imageUrl && (backendProp as any).imageUrl.trim() !== '') {
+    console.log('Using imageUrl:', (backendProp as any).imageUrl)
+    return (backendProp as any).imageUrl
+  }
+  
+  // Check image property
+  if ((backendProp as any).image && (backendProp as any).image.trim() !== '') {
+    console.log('Using image property:', (backendProp as any).image)
+    return (backendProp as any).image
+  }
+  
+  // Fallback to default image
+  const defaultImg = getDefaultImage(backendProp.type)
+  console.log('Using default image for type', backendProp.type, ':', defaultImg)
+  return defaultImg
 }
 
 const getDefaultImage = (type: string): string => {

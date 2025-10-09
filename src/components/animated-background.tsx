@@ -33,8 +33,8 @@ export function AnimatedBackground() {
   // Static, CSS-only background for SSR and before motion is ready
   if (!mounted || !motion) {
     return (
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-violet-50" />
+      <div className="absolute inset-0 -z-10 overflow-hidden min-h-full w-full">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-violet-50 min-h-full" />
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-violet-400/20 rounded-full blur-3xl" />
         <div className="absolute top-3/4 right-1/4 w-80 h-80 bg-gradient-to-r from-emerald-400/15 to-blue-400/15 rounded-full blur-3xl" />
         <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-gradient-to-r from-violet-400/10 to-pink-400/10 rounded-full blur-3xl" />
@@ -45,8 +45,8 @@ export function AnimatedBackground() {
   const Motion = motion
 
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-violet-50" />
+    <div className="absolute inset-0 -z-10 overflow-hidden min-h-full w-full">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-violet-50 min-h-full" />
 
       <Motion.div
         className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-violet-400/20 rounded-full blur-3xl"

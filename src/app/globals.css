@@ -323,7 +323,46 @@ body.standalone-mode {
 /* Mobile Bottom Navigation specific styles */
 @media (max-width: 1023px) {
   body {
-    padding-bottom: max(80px, calc(80px + env(safe-area-inset-bottom)));
+    padding-bottom: max(90px, calc(90px + env(safe-area-inset-bottom)));
+  }
+}
+
+/* Additional utility classes for mobile-safe spacing */
+.mobile-safe-bottom {
+  padding-bottom: max(90px, calc(90px + env(safe-area-inset-bottom)));
+}
+
+.mobile-safe-margin-bottom {
+  margin-bottom: max(90px, calc(90px + env(safe-area-inset-bottom)));
+}
+
+/* Page content container with proper mobile nav spacing */
+.page-content-mobile-safe {
+  min-height: calc(100vh - max(90px, calc(90px + env(safe-area-inset-bottom))));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+
+/* Floating action buttons should account for mobile nav */
+.floating-action-mobile-safe {
+  bottom: max(100px, calc(100px + env(safe-area-inset-bottom)));
+}
+
+/* Extra small breakpoint utility classes */
+@media (min-width: 475px) {
+  .xs\:flex {
+    display: flex;
+  }
+  
+  .xs\:hidden {
+    display: none;
+  }
+  
+  .xs\:block {
+    display: block;
+  }
+  
+  .xs\:inline {
+    display: inline;
   }
 }
 

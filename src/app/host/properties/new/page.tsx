@@ -89,21 +89,75 @@ interface Suggestion {
   place_type: string[];
 }
 
-// Mock amenities — replace with real data or dynamic selection
-const AMENITIES = [
-  "Air Conditioning",
-  "Swimming Pool",
-  "Gym",
-  "Parking",
-  "Security",
-  "Furnished",
-  "Pet Friendly",
-  "Balcony",
-  "Garden",
-  "Wifi",
-  "Laundry",
-  "Elevator",
-];
+// Dynamic amenities based on property type
+const AMENITIES_BY_TYPE = {
+  APPARTMENT: [
+    "Air Conditioning",
+    "Swimming Pool",
+    "Gym",
+    "Parking",
+    "Security",
+    "Furnished",
+    "Pet Friendly",
+    "Balcony",
+    "Garden",
+    "Wifi",
+    "Laundry",
+    "Elevator",
+    "Cable TV",
+    "Dishwasher",
+    "Microwave"
+  ],
+  COMMERCIAL: [
+    "Parking",
+    "Security",
+    "Air Conditioning",
+    "Elevator",
+    "High-Speed Internet",
+    "Reception Area",
+    "Conference Room",
+    "Kitchen/Break Room",
+    "Backup Generator",
+    "CCTV Surveillance",
+    "Fire Safety System",
+    "Accessibility Compliant",
+    "Loading Bay",
+    "Storage Space"
+  ],
+  OFFICE: [
+    "Air Conditioning",
+    "High-Speed Internet",
+    "Parking",
+    "Security",
+    "Elevator",
+    "Reception Area",
+    "Meeting Rooms",
+    "Kitchen/Break Room",
+    "Printer/Copier Access",
+    "24/7 Access",
+    "Backup Generator",
+    "CCTV Surveillance",
+    "Furnished",
+    "Phone System"
+  ],
+  LAND: [
+    "Fenced",
+    "Gated Community",
+    "Security",
+    "Road Access",
+    "Electricity Available",
+    "Water Supply",
+    "Title Documents",
+    "Survey Plan",
+    "Building Permit Ready",
+    "Drainage System",
+    "Street Lighting",
+    "Landscaped",
+    "Corner Piece",
+    "Commercial Zoning",
+    "Residential Zoning"
+  ]
+};
 interface MapboxFeature {
   id: string;
   place_name: string;
@@ -146,6 +200,73 @@ export default function NewPropertyPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
+  // Get amenities based on current property type
+  const getAmunitiesForType = (type: PropertyFormData["type"]): string[] => {
+    return AMENITIES_BY_TYPE[type] || [];
+  };
+
+  // Get current amenities
+  const currentAmenities = getAmunitiesForType(formData.type);
+
+  // Check if property type requires bedrooms/bathrooms
+  const requiresRooms = (type: PropertyFormData["type"]): boolean => {
+    return type === "APPARTMENT";
+  };
+
+  // Get area label based on property type
+  const getAreaLabel = (type: PropertyFormData["type"]): string => {
+    switch (type) {
+      case "LAND":
+        return "Area (sqm) *";
+      case "COMMERCIAL":
+      case "OFFICE":
+        return "Floor Area (sqm) *";
+      default:
+        return "Area (sqm) *";
+    }
+  };
+
+  // Get area placeholder based on property type
+  const getAreaPlaceholder = (type: PropertyFormData["type"]): string => {
+    switch (type) {
+      case "LAND":
+        return "e.g., 1200";
+      case "COMMERCIAL":
+      case "OFFICE":
+        return "e.g., 500";
+      default:
+        return "e.g., 120";
+    }
+  };
+
+  // Get title placeholder based on property type
+  const getTitlePlaceholder = (type: PropertyFormData["type"]): string => {
+    switch (type) {
+      case "LAND":
+        return "e.g., 1200sqm Residential Land in Lekki Phase 2";
+      case "COMMERCIAL":
+        return "e.g., Modern Commercial Space in Victoria Island";
+      case "OFFICE":
+        return "e.g., Executive Office Space in Ikoyi";
+      default:
+        return "e.g., Luxury 3BR Apartment in Lekki";
+    }
+  };
+
+  // Get description placeholder based on property type
+  const getDescriptionPlaceholder = (type: PropertyFormData["type"]): string => {
+    switch (type) {
+      case "LAND":
+        return "Describe the land features, zoning, access roads, utilities availability, nearby landmarks, and development potential...";
+      case "COMMERCIAL":
+        return "Describe the commercial space, foot traffic, parking, accessibility, nearby businesses, and facilities...";
+      case "OFFICE":
+        return "Describe the office space, layout, facilities, parking, accessibility, and professional environment...";
+      default:
+        return "Describe your property's unique features, location benefits, nearby amenities, and what makes it special...";
+    }
+  };
+
   // Initialize Mapbox map
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -174,6 +295,19 @@ export default function NewPropertyPage() {
       }
     };
   }, []);
+
+  // Clear amenities when property type changes to avoid invalid selections
+  useEffect(() => {
+    const validAmenities = currentAmenities.filter(amenity => 
+      formData.amenities.includes(amenity)
+    );
+    if (validAmenities.length !== formData.amenities.length) {
+      setFormData(prev => ({
+        ...prev,
+        amenities: validAmenities
+      }));
+    }
+  }, [formData.type]);
 
   // Get user's current location
   useEffect(() => {
@@ -490,16 +624,19 @@ export default function NewPropertyPage() {
       newErrors.location = "Please select location on map";
     }
 
-    if (!formData.bedrooms) {
-      newErrors.bedrooms = "Number of bedrooms is required";
-    } else if (isNaN(Number(formData.bedrooms)) || Number(formData.bedrooms) < 0) {
-      newErrors.bedrooms = "Bedrooms must be a valid number";
-    }
+    // Only validate bedrooms and bathrooms for properties that require them
+    if (requiresRooms(formData.type)) {
+      if (!formData.bedrooms) {
+        newErrors.bedrooms = "Number of bedrooms is required";
+      } else if (isNaN(Number(formData.bedrooms)) || Number(formData.bedrooms) < 0) {
+        newErrors.bedrooms = "Bedrooms must be a valid number";
+      }
 
-    if (!formData.bathrooms) {
-      newErrors.bathrooms = "Number of bathrooms is required";
-    } else if (isNaN(Number(formData.bathrooms)) || Number(formData.bathrooms) < 0) {
-      newErrors.bathrooms = "Bathrooms must be a valid number";
+      if (!formData.bathrooms) {
+        newErrors.bathrooms = "Number of bathrooms is required";
+      } else if (isNaN(Number(formData.bathrooms)) || Number(formData.bathrooms) < 0) {
+        newErrors.bathrooms = "Bathrooms must be a valid number";
+      }
     }
 
     if (!formData.area) {
@@ -533,18 +670,24 @@ export default function NewPropertyPage() {
       });
 
       // Append property data as JSON string
-      formDataToSend.append('propertyData', JSON.stringify({
+      const propertyData: any = {
         title: formData.title,
         description: formData.description,
         type: formData.type,
         price: parseFloat(formData.price),
         location: formData.location,
         coordinates: formData.coordinates || mapCenter,
-        bedrooms: parseInt(formData.bedrooms),
-        bathrooms: parseInt(formData.bathrooms),
         area: parseFloat(formData.area),
         amenities: formData.amenities,
-      }));
+      };
+      
+      // Only include bedrooms and bathrooms for properties that require them
+      if (requiresRooms(formData.type)) {
+        propertyData.bedrooms = parseInt(formData.bedrooms);
+        propertyData.bathrooms = parseInt(formData.bathrooms);
+      }
+      
+      formDataToSend.append('propertyData', JSON.stringify(propertyData));
 console.log(formDataToSend)
       const result = await propertyService.createPropertyWithFiles(formDataToSend);
       if(result){
@@ -640,14 +783,17 @@ console.log(formDataToSend)
             <div>
               <h1 className="text-3xl font-bold text-foreground dark:text-white">List New Property</h1>
               <p className="text-muted-foreground dark:text-gray-300">
-                Fill in the details below to list your property for {formData.type.toLowerCase()}.
+                {formData.type === "LAND" 
+                  ? "Provide comprehensive details about your land to attract potential buyers or developers."
+                  : `Fill in the details below to list your ${formData.type.toLowerCase()} property.`
+                }
               </p>
             </div>
           </div>
 
           {/* Property Type Selector */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {(["APPARTMENT", "COMMERCIAL", "OFFCIE", "LAND"] as const).map((type) => (
+          {(["APPARTMENT", "COMMERCIAL", "OFFICE", "LAND"] as const).map((type) => (
               <Badge
                 key={type}
                 className={`px-4 py-2 cursor-pointer transition-all duration-200 ${
@@ -685,7 +831,7 @@ console.log(formDataToSend)
                   </Label>
                   <Input
                     id="title"
-                    placeholder="e.g., Luxury 3BR Apartment in Lekki"
+                    placeholder={getTitlePlaceholder(formData.type)}
                     value={formData.title}
                     onChange={(e) => handleInputChange("title", e.target.value)}
                     className={errors.title ? "border-red-500" : ""}
@@ -718,7 +864,7 @@ console.log(formDataToSend)
                 </Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe your property, including key features, neighborhood, and any special notes..."
+                  placeholder={getDescriptionPlaceholder(formData.type)}
                   value={formData.description}
                   onChange={(e) => handleInputChange("description", e.target.value)}
                   rows={5}
@@ -839,48 +985,59 @@ console.log(formDataToSend)
           {/* Property Details */}
           <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-xl font-bold text-foreground dark:text-white">Property Details</CardTitle>
+              <CardTitle className="text-xl font-bold text-foreground dark:text-white">
+                {formData.type === "LAND" ? "Land Details" : "Property Details"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="bedrooms" className="text-foreground dark:text-white">
-                    Bedrooms *
-                  </Label>
-                  <Input
-                    id="bedrooms"
-                    type="number"
-                    placeholder="e.g., 3"
-                    value={formData.bedrooms}
-                    onChange={(e) => handleInputChange("bedrooms", e.target.value)}
-                    className={errors.bedrooms ? "border-red-500" : ""}
-                  />
-                  {errors.bedrooms && <p className="text-red-500 text-sm">{errors.bedrooms}</p>}
-                </div>
+              <div className={`grid grid-cols-1 gap-6 ${
+                requiresRooms(formData.type) ? "md:grid-cols-3" : "md:grid-cols-1 max-w-md"
+              }`}>
+                {/* Bedrooms - only for apartments */}
+                {requiresRooms(formData.type) && (
+                  <div className="space-y-2">
+                    <Label htmlFor="bedrooms" className="text-foreground dark:text-white">
+                      Bedrooms *
+                    </Label>
+                    <Input
+                      id="bedrooms"
+                      type="number"
+                      placeholder="e.g., 3"
+                      value={formData.bedrooms}
+                      onChange={(e) => handleInputChange("bedrooms", e.target.value)}
+                      className={errors.bedrooms ? "border-red-500" : ""}
+                    />
+                    {errors.bedrooms && <p className="text-red-500 text-sm">{errors.bedrooms}</p>}
+                  </div>
+                )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="bathrooms" className="text-foreground dark:text-white">
-                    Bathrooms *
-                  </Label>
-                  <Input
-                    id="bathrooms"
-                    type="number"
-                    placeholder="e.g., 2"
-                    value={formData.bathrooms}
-                    onChange={(e) => handleInputChange("bathrooms", e.target.value)}
-                    className={errors.bathrooms ? "border-red-500" : ""}
-                  />
-                  {errors.bathrooms && <p className="text-red-500 text-sm">{errors.bathrooms}</p>}
-                </div>
+                {/* Bathrooms - only for apartments */}
+                {requiresRooms(formData.type) && (
+                  <div className="space-y-2">
+                    <Label htmlFor="bathrooms" className="text-foreground dark:text-white">
+                      Bathrooms *
+                    </Label>
+                    <Input
+                      id="bathrooms"
+                      type="number"
+                      placeholder="e.g., 2"
+                      value={formData.bathrooms}
+                      onChange={(e) => handleInputChange("bathrooms", e.target.value)}
+                      className={errors.bathrooms ? "border-red-500" : ""}
+                    />
+                    {errors.bathrooms && <p className="text-red-500 text-sm">{errors.bathrooms}</p>}
+                  </div>
+                )}
 
+                {/* Area - for all property types but with different labels */}
                 <div className="space-y-2">
                   <Label htmlFor="area" className="text-foreground dark:text-white">
-                    Area (sqm) *
+                    {getAreaLabel(formData.type)}
                   </Label>
                   <Input
                     id="area"
                     type="number"
-                    placeholder="e.g., 120"
+                    placeholder={getAreaPlaceholder(formData.type)}
                     value={formData.area}
                     onChange={(e) => handleInputChange("area", e.target.value)}
                     className={errors.area ? "border-red-500" : ""}
@@ -889,27 +1046,76 @@ console.log(formDataToSend)
                 </div>
               </div>
 
-              {/* Amenities */}
-              <div className="space-y-2">
-                <Label className="text-foreground dark:text-white">Amenities</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {AMENITIES.map((amenity) => (
-                    <div
-                      key={amenity}
-                      className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
-                        formData.amenities.includes(amenity)
-                          ? "border-primary bg-primary/10 dark:bg-primary/20"
-                          : "border-border hover:border-primary/50 dark:border-gray-700"
-                      }`}
-                      onClick={() => toggleAmenity(amenity)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-primary" />
-                        <span className="text-sm text-foreground dark:text-white">{amenity}</span>
-                      </div>
-                    </div>
-                  ))}
+              {/* Additional Information for Land */}
+              {formData.type === "LAND" && (
+                <Alert className="bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700">
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertTitle>Land Property</AlertTitle>
+                  <AlertDescription>
+                    Please ensure you have all necessary documentation including survey plans, title documents, and any applicable permits.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Dynamic Amenities */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Label className="text-foreground dark:text-white">
+                    {formData.type === "LAND" ? "Features & Infrastructure" : "Amenities & Features"}
+                  </Label>
+                  <Badge variant="outline" className="text-xs">
+                    {formData.type === "LAND" ? "Land Specific" : "Property Features"}
+                  </Badge>
                 </div>
+                
+                {currentAmenities.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {currentAmenities.map((amenity) => (
+                      <div
+                        key={amenity}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
+                          formData.amenities.includes(amenity)
+                            ? "border-primary bg-primary/10 dark:bg-primary/20 shadow-sm"
+                            : "border-border hover:border-primary/50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        }`}
+                        onClick={() => toggleAmenity(amenity)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            formData.amenities.includes(amenity) ? "bg-primary" : "bg-gray-400"
+                          }`} />
+                          <span className="text-sm text-foreground dark:text-white font-medium">
+                            {amenity}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No amenities available for this property type</p>
+                  </div>
+                )}
+                
+                {formData.amenities.length > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+                    <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">
+                      Selected: {formData.amenities.length} feature{formData.amenities.length !== 1 ? 's' : ''}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {formData.amenities.slice(0, 3).map((amenity, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {amenity}
+                        </Badge>
+                      ))}
+                      {formData.amenities.length > 3 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{formData.amenities.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -989,8 +1195,8 @@ console.log(formDataToSend)
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-end">
+          {/* Submit Button - Mobile Safe */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-end mobile-safe-bottom pb-6">
             <Button
               type="button"
               variant="outline"

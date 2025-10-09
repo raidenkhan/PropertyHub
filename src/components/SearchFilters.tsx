@@ -30,13 +30,8 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
   const [propertyType, setPropertyType] = useState("Any type")
   const [priceRange, setPriceRange] = useState("Any price")
   const [bedrooms, setBedrooms] = useState("Any")
-  const [isExpanded, setIsExpanded] = useState(() => {
-    // Start collapsed on mobile, expanded on desktop
-    if (typeof window !== 'undefined') {
-      return window.innerWidth >= 768
-    }
-    return true
-  })
+  const [isExpanded, setIsExpanded] = useState(false) // Always start collapsed to avoid hydration mismatch
+  const [hasMounted, setHasMounted] = useState(false)
 
   const propertyTypes = [
     { id: "apartment", label: "APPARTMENT", icon: Building },
@@ -56,6 +51,22 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
   ]
 
   const bedroomOptions = ["Any", "1+", "2+", "3+", "4+", "5+"]
+
+  // Handle responsive behavior after mount to avoid hydration mismatch
+  useEffect(() => {
+    setHasMounted(true)
+    // Set initial expanded state based on screen size after hydration
+    const updateExpandedState = () => {
+      setIsExpanded(window.innerWidth >= 768)
+    }
+    
+    // Set initial state
+    updateExpandedState()
+    
+    // Listen for resize events
+    window.addEventListener('resize', updateExpandedState)
+    return () => window.removeEventListener('resize', updateExpandedState)
+  }, [])
 
   // Apply filters whenever filter state changes
   useEffect(() => {

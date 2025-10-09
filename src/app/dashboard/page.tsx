@@ -30,10 +30,7 @@ import { ModeToggle } from "@/components/dashboard/ModeToggle";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import { propertyService } from "@/lib/api/propertyService";
-import { transactionService, TransactionHistory } from "@/lib/api/transactionService";
-import { messagesService } from "@/lib/api/messageService";
-import { notificationService } from "@/lib/api/notificationService";
+import { useDataCache } from "@/contexts/DataCacheContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 // import { PerformanceMonitor } from "@/lib/performance";
 
@@ -92,118 +89,59 @@ export default function UserDashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
-  const [isLoading, setIsLoading] = useState(true);
-   const { notifications, unreadCount, loading: notificationsLoading, markAsRead } = useNotifications();
+  const { notifications, unreadCount, loading: notificationsLoading, markAsRead } = useNotifications();
   
-  
-  
-  // State for real API data
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
-  const [conversations, setConversations] = useState<User[]>([]);
-  const [stats, setStats] = useState({
-    totalListings: 0,
-    activePurchases: 0,
-    unreadMessages: 0,
-    unreadNotifications: 0,
-  });
+  // Use cached data instead of local state
+  const {
+    properties,
+    transactions,
+    conversations,
+    stats,
+    isLoading,
+    fetchAllData,
+    prefetchData,
+    getCacheStatus
+  } = useDataCache();
 
+  // Initialize data cache on mount
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-       // PerformanceMonitor.mark('dashboard-data-fetch-start');
-        setIsLoading(true);
-        
-        // Fetch critical data first (properties and stats)
-        const propertiesPromise = propertyService.getMyProperties().catch(err => {
-          console.warn('Properties fetch failed:', err);
-          return { data: [] };
-        });
-        
-        // Start with essential data
-        const propertiesResponse = await propertiesPromise;
-        const propertiesData = propertiesResponse?.data || [];
-        setProperties(propertiesData);
-        
-        // Set initial loading to false for faster perceived performance
-        setIsLoading(false);
-        
-        // Fetch remaining data in background
-        const [transactionsResponse, conversationsData, unreadMessageCount] = await Promise.allSettled([
-          transactionService.getTransactionHistory().catch(err => {
-            console.warn('Transactions fetch failed:', err);
-            return { data: [] };
-          }),
-          messagesService.getConversations().catch(err => {
-            console.warn('Conversations fetch failed:', err);
-            return [];
-          }),
-          messagesService.getUnreadMessageCount().catch(err => {
-            console.warn('Unread count fetch failed:', err);
-            return 0;
-          })
-        ]);
-        
-        // Process background data
-        const transactionsData = transactionsResponse.status === 'fulfilled' ? 
-          (Array.isArray(transactionsResponse.value?.data) ? transactionsResponse.value.data : []) : [];
-        
-        const dashboardTransactions: DashboardTransaction[] = transactionsData.map((tx: TransactionHistory) => ({
-          id: tx.id,
-          amount: tx.amount,
-          status: tx.status,
-          property: {
-            title: tx.property.title,
-            location: tx.property.location
-          },
-          createdAt: tx.createdAt.toString()
-        }));
-        
-        setTransactions(dashboardTransactions);
-        
-        // Update conversations
-        const conversations = conversationsData.status === 'fulfilled' ? conversationsData.value : [];
-        setConversations(conversations || []);
-        
-        // Update message count
-        const messageCount = unreadMessageCount.status === 'fulfilled' ? unreadMessageCount.value : 0;
-        
-        // Calculate and update stats
-        const activePurchases = dashboardTransactions.filter(tx => 
-          tx.status === 'PENDING' || tx.status === 'ESCROW'
-        ).length;
-        
-        setStats({
-          totalListings: propertiesData.length,
-          activePurchases: activePurchases,
-          unreadMessages: messageCount || 0,
-          unreadNotifications: unreadCount || 0,
-        });
-        
-        // PerformanceMonitor.mark('dashboard-data-fetch-end');
-        // const fetchDuration = PerformanceMonitor.measure(
-        //   'dashboard-data-fetch-duration', 
-        //   'dashboard-data-fetch-start', 
-        //   'dashboard-data-fetch-end'
-        // );
-        
-        // if (fetchDuration && process.env.NODE_ENV === 'development') {
-        //   console.log(`Dashboard data fetch took ${fetchDuration.toFixed(2)}ms`);
-        // }
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
+    if (user) {
+      fetchAllData().catch(error => {
+        console.error('Failed to fetch dashboard data:', error);
         toast({
           title: "❌ Load Failed",
           description: "Some data could not be loaded. Please refresh.",
         });
-        setIsLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchData();
+      });
     }
-  }, [user]);
+  }, [user, fetchAllData]);
+
+  // Prefetch data based on active tab for better perceived performance
+  useEffect(() => {
+    const prefetchKeys: string[] = [];
+    
+    switch (activeTab) {
+      case 'properties':
+        prefetchKeys.push('properties');
+        break;
+      case 'purchases':
+        prefetchKeys.push('transactions');
+        break;
+      case 'messages':
+        prefetchKeys.push('conversations');
+        break;
+      case 'notifications':
+        prefetchKeys.push('notifications');
+        break;
+      default:
+        // Overview tab might need all data
+        prefetchKeys.push('properties', 'transactions');
+    }
+    
+    if (prefetchKeys.length > 0) {
+      prefetchData(prefetchKeys);
+    }
+  }, [activeTab, prefetchData]);
   
   // Initialize performance tracking
   useEffect(() => {

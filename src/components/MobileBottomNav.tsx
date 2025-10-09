@@ -27,10 +27,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/lib/auth/authContext";
-import { useWishlist } from "@/lib/hooks/useWishlist";
 import { useResponsive } from "@/hooks/useResponsive";
 import { messagesService } from '@/lib/api/messageService';
 import { chatService } from "@/lib/api/chatService";
+import { useWishlist } from '@/lib/hooks/useWishlist';
 
 interface NavItem {
   id: string;
@@ -46,12 +46,11 @@ export function MobileBottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { wishlistCount } = useWishlist();
   const { isMobileOrTablet } = useResponsive();
   const { theme, setTheme } = useTheme();
+  const { wishlistCount: savedProperties } = useWishlist();
   const [unreadCount, setUnreadCount] = useState(0);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Handle hydration
@@ -94,7 +93,10 @@ export function MobileBottomNav() {
     } else {
       router.push(item.path);
     }
-    setShowMoreMenu(false);
+    // Don't close the menu if this is the "more" button toggle
+    if (item.id !== 'more') {
+      setShowMoreMenu(false);
+    }
   };
 
   const handleDashboardClick = () => {
@@ -111,7 +113,7 @@ export function MobileBottomNav() {
     }
   };
 
-  // Main navigation items (always visible)
+  // Main navigation items (always visible) - removed search since it's available on main screen
   const mainNavItems: NavItem[] = [
     {
       id: 'home',
@@ -120,19 +122,18 @@ export function MobileBottomNav() {
       path: '/',
     },
     {
-      id: 'search',
-      label: 'Search',
-      icon: <Search className="w-5 h-5" />,
-      path: '#',
-      onClick: () => setShowSearchOverlay(true),
+      id: 'map',
+      label: 'Map',
+      icon: <MapPin className="w-5 h-5" />,
+      path: '/map',
     },
     {
-      id: 'wishlist',
-      label: 'Wishlist',
-      icon: <Heart className="w-5 h-5" />,
-      path: '/wishlist',
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: <LayoutDashboard className="w-5 h-5" />,
+      path: '/dashboard',
       requiresAuth: true,
-      badge: wishlistCount > 0 ? wishlistCount : undefined,
+      onClick: handleDashboardClick,
     },
     {
       id: 'messages',
@@ -151,101 +152,6 @@ export function MobileBottomNav() {
     },
   ];
 
-  // Additional navigation items (shown in more menu)
-  const moreNavItems: NavItem[] = user ? [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: <LayoutDashboard className="w-5 h-5" />,
-      path: '/dashboard',
-      onClick: handleDashboardClick,
-    },
-    {
-      id: 'add-property',
-      label: 'List Property',
-      icon: <Plus className="w-5 h-5" />,
-      path: '/host/properties/new',
-    },
-    {
-      id: 'map',
-      label: 'Map View',
-      icon: <MapPin className="w-5 h-5" />,
-      path: '/map',
-    },
-    {
-      id: 'my-listings',
-      label: 'My Listings',
-      icon: <Home className="w-5 h-5" />,
-      path: '/my-listings',
-    },
-    {
-      id: 'my-bookings',
-      label: 'My Bookings',
-      icon: <Bookmark className="w-5 h-5" />,
-      path: '/my-bookings',
-    },
-    {
-      id: 'notifications',
-      label: 'Notifications',
-      icon: <Bell className="w-5 h-5" />,
-      path: '/notifications',
-    },
-    {
-      id: 'profile',
-      label: 'Profile',
-      icon: <User className="w-5 h-5" />,
-      path: '/profile',
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: <Settings className="w-5 h-5" />,
-      path: '/dashboard/settings',
-    },
-    {
-      id: 'theme-toggle',
-      label: theme === 'dark' ? 'Light Mode' : 'Dark Mode',
-      icon: theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />,
-      path: '#',
-      onClick: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
-    },
-    {
-      id: 'logout',
-      label: 'Logout',
-      icon: <LogOut className="w-5 h-5" />,
-      path: '#',
-      onClick: async () => {
-        await logout();
-        setShowMoreMenu(false);
-      },
-    },
-  ] : [
-    {
-      id: 'properties',
-      label: 'Browse Properties',
-      icon: <Search className="w-5 h-5" />,
-      path: '/properties',
-    },
-    {
-      id: 'map',
-      label: 'Map View',
-      icon: <MapPin className="w-5 h-5" />,
-      path: '/map',
-    },
-    {
-      id: 'theme-toggle',
-      label: theme === 'dark' ? 'Light Mode' : 'Dark Mode',
-      icon: theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />,
-      path: '#',
-      onClick: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
-    },
-    {
-      id: 'auth',
-      label: 'Sign In',
-      icon: <User className="w-5 h-5" />,
-      path: '/auth',
-    },
-  ];
 
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/';
@@ -257,174 +163,259 @@ export function MobileBottomNav() {
 
   return (
     <>
-      {/* Search Overlay */}
-      <AnimatePresence>
-        {showSearchOverlay && (
-          <>
-            {/* Search Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-md z-50"
-              onClick={() => setShowSearchOverlay(false)}
-            />
-            
-            {/* Search Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 50 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-background/95 backdrop-blur-md rounded-3xl border border-border shadow-2xl z-50"
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">Search Properties</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowSearchOverlay(false)}
-                    className="h-8 w-8 p-0 rounded-full hover:bg-accent"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Search properties, locations..."
-                    className="pl-10 pr-4 py-3 bg-background/50 border-input focus:border-ring focus:ring-2 focus:ring-ring/20 text-base rounded-xl"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const query = (e.target as HTMLInputElement).value;
-                        router.push(`/properties${query ? `?search=${encodeURIComponent(query)}` : ''}`);
-                        setShowSearchOverlay(false);
-                      }
-                      if (e.key === 'Escape') {
-                        setShowSearchOverlay(false);
-                      }
-                    }}
-                  />
-                </div>
-                
-                {/* Quick Search Actions */}
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-primary hover:bg-primary/90 rounded-xl"
-                    onClick={() => {
-                      router.push('/properties');
-                      setShowSearchOverlay(false);
-                    }}
-                  >
-                    <Search className="w-4 h-4 mr-2" />
-                    Browse All
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="px-4 rounded-xl"
-                    onClick={() => {
-                      router.push('/map');
-                      setShowSearchOverlay(false);
-                    }}
-                  >
-                    <MapPin className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
       {/* More Menu Overlay */}
       <AnimatePresence>
         {showMoreMenu && (
           <>
-            {/* Backdrop */}
+            {/* Enhanced Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-md z-40"
               onClick={() => setShowMoreMenu(false)}
             />
             
-            {/* More Menu */}
+            {/* Enhanced More Menu */}
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              initial={{ opacity: 0, y: 30, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed bottom-20 left-4 right-4 bg-background/95 backdrop-blur-md rounded-3xl border border-border shadow-2xl z-50"
+              exit={{ opacity: 0, y: 30, scale: 0.9 }}
+              transition={{ 
+                duration: 0.4, 
+                ease: "easeOut",
+                type: "spring",
+                damping: 25,
+                stiffness: 300
+              }}
+              className="fixed bottom-24 left-4 right-4 max-w-md mx-auto bg-background/98 backdrop-blur-xl rounded-3xl border border-border/20 shadow-2xl z-50"
+              style={{
+                background: theme === 'dark' 
+                  ? 'rgba(0, 0, 0, 0.95)' 
+                  : 'rgba(255, 255, 255, 0.98)',
+                backdropFilter: 'blur(30px) saturate(180%)',
+                border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'}`,
+                boxShadow: theme === 'dark' 
+                  ? '0 25px 50px -12px rgba(0, 0, 0, 0.8)' 
+                  : '0 25px 50px -12px rgba(0, 0, 0, 0.15)'
+              }}
             >
               <div className="p-6">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">More Options</h3>
+                {/* Enhanced Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground dark:text-white">Quick Access</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Navigate and manage your account</p>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowMoreMenu(false)}
-                    className="h-8 w-8 p-0 rounded-full hover:bg-accent"
+                    className="h-9 w-9 p-0 rounded-full hover:bg-accent/60 transition-all duration-200 hover:scale-105"
                   >
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
                 
-                {/* Grid Layout */}
-                <div className="grid grid-cols-3 gap-4">
-                  {moreNavItems.map((item, index) => {
-                    const canAccess = !item.requiresAuth || user;
-                    
-                    if (!canAccess) return null;
-                    
-                    const isLogout = item.id === 'logout';
+                {/* Organized Sections with improved UX */}
+                <div className="space-y-6 max-h-[65vh] overflow-y-auto scrollbar-hide">
+                  {user ? (
+                    <>
+                      {/* Enhanced Quick Actions Section */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-1 h-4 bg-primary rounded-full"></div>
+                          <p className="text-sm font-semibold text-foreground dark:text-white">Quick Actions</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          {[
+                            { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, onClick: handleDashboardClick },
+                            { id: 'add-property', label: 'List Property', icon: <Plus className="w-5 h-5" />, path: '/host/properties/new' },
+                            { id: 'map', label: 'Map View', icon: <MapPin className="w-5 h-5" />, path: '/map' }
+                          ].map((item, index) => (
+                            <motion.div
+                              key={item.id}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.1, delay: index * 0.05 }}
+                            >
+                              <Button
+                                variant="ghost"
+                                className="h-18 w-full flex flex-col items-center justify-center gap-2 rounded-2xl bg-accent/20 hover:bg-accent/60 hover:shadow-lg transition-all duration-300 group hover:scale-105 border border-border/10"
+                                onClick={() => {
+                                  if (item.onClick) {
+                                    item.onClick();
+                                  } else {
+                                    router.push(item.path!);
+                                  }
+                                  setShowMoreMenu(false);
+                                }}
+                              >
+                                <div className="p-3 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110">
+                                  {item.icon}
+                                </div>
+                                <span className="text-xs font-semibold text-center leading-tight text-foreground dark:text-white">{item.label}</span>
+                              </Button>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
 
-                    return (
+                      {/* Enhanced Account Section */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+                          <p className="text-sm font-semibold text-foreground dark:text-white">Account</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          {[
+                            { id: 'profile', label: 'Profile', icon: <User className="w-5 h-5" />, path: '/profile' },
+                            { id: 'wishlist', label: 'Wishlist', icon: <Heart className="w-5 h-5" />, path: '/wishlist', badge: savedProperties > 0 ? savedProperties : undefined },
+                            { id: 'notifications', label: 'Alerts', icon: <Bell className="w-5 h-5" />, path: '/notifications' }
+                          ].map((item, index) => (
+                            <motion.div
+                              key={item.id}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.1, delay: 0.1 + index * 0.05 }}
+                            >
+                              <Button
+                                variant="ghost"
+                                className="h-18 w-full flex flex-col items-center justify-center gap-2 rounded-2xl bg-accent/20 hover:bg-accent/60 hover:shadow-lg transition-all duration-300 group hover:scale-105 relative border border-border/10"
+                                onClick={() => {
+                                  router.push(item.path);
+                                  setShowMoreMenu(false);
+                                }}
+                              >
+                                <div className="p-3 rounded-xl bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-all duration-300 group-hover:scale-110 relative">
+                                  {item.icon}
+                                  {(item as any).badge && (
+                                    <Badge 
+                                      variant="secondary" 
+                                      className="absolute -top-1 -right-1 h-5 min-w-5 p-0 flex items-center justify-center text-xs font-bold bg-primary text-primary-foreground animate-pulse shadow-lg"
+                                    >
+                                      {typeof (item as any).badge === 'number' && (item as any).badge > 99 ? '99+' : (item as any).badge}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <span className="text-xs font-semibold text-center leading-tight text-foreground dark:text-white">{item.label}</span>
+                              </Button>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Enhanced Settings & Logout */}
+                      <div className="border-t border-border/30 pt-6 mt-2">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-1 h-4 bg-orange-500 rounded-full"></div>
+                          <p className="text-sm font-semibold text-foreground dark:text-white">Settings</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.1, delay: 0.2 }}
+                          >
+                            <Button
+                              variant="ghost"
+                              className="h-18 w-full flex flex-col items-center justify-center gap-2 rounded-2xl bg-accent/20 hover:bg-accent/60 hover:shadow-lg transition-all duration-300 group hover:scale-105 border border-border/10"
+                              onClick={() => {
+                                router.push('/dashboard/settings');
+                                setShowMoreMenu(false);
+                              }}
+                            >
+                              <div className="p-3 rounded-xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-all duration-300 group-hover:scale-110">
+                                <Settings className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-semibold text-center leading-tight text-foreground dark:text-white">Settings</span>
+                            </Button>
+                          </motion.div>
+                          
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.1, delay: 0.25 }}
+                          >
+                            <Button
+                              variant="ghost"
+                              className="h-18 w-full flex flex-col items-center justify-center gap-2 rounded-2xl bg-accent/20 hover:bg-accent/60 hover:shadow-lg transition-all duration-300 group hover:scale-105 border border-border/10"
+                              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                            >
+                              <div className="p-3 rounded-xl bg-yellow-500/10 group-hover:bg-yellow-500/20 transition-all duration-300 group-hover:scale-110">
+                                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                              </div>
+                              <span className="text-xs font-semibold text-center leading-tight text-foreground dark:text-white">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+                            </Button>
+                          </motion.div>
+                          
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.1, delay: 0.3 }}
+                          >
+                            <Button
+                              variant="ghost"
+                              className="h-18 w-full flex flex-col items-center justify-center gap-2 rounded-2xl bg-red-50/50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-all duration-300 group hover:scale-105 border border-red-200/30 dark:border-red-800/30 hover:shadow-lg"
+                              onClick={async () => {
+                                await logout();
+                                setShowMoreMenu(false);
+                              }}
+                            >
+                              <div className="p-3 rounded-xl bg-red-100/50 dark:bg-red-900/30 group-hover:bg-red-200/70 dark:group-hover:bg-red-900/50 transition-all duration-300 group-hover:scale-110">
+                                <LogOut className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-semibold text-center leading-tight">Logout</span>
+                            </Button>
+                          </motion.div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    /* Non-authenticated user menu */
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { id: 'properties', label: 'Browse', icon: <Search className="w-5 h-5" />, path: '/properties' },
+                        { id: 'map', label: 'Map View', icon: <MapPin className="w-5 h-5" />, path: '/map' },
+                        { id: 'auth', label: 'Sign In', icon: <User className="w-5 h-5" />, path: '/auth' }
+                      ].map((item, index) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.1, delay: index * 0.05 }}
+                        >
+                          <Button
+                            variant="ghost"
+                            className="h-16 w-full flex flex-col items-center justify-center gap-2 rounded-2xl hover:bg-accent/50 hover:shadow-lg transition-all duration-200 group hover:scale-105"
+                            onClick={() => router.push(item.path)}
+                          >
+                            <div className="p-2 rounded-xl group-hover:bg-primary/10 transition-all duration-200">
+                              {item.icon}
+                            </div>
+                            <span className="text-xs font-medium text-center leading-tight">{item.label}</span>
+                          </Button>
+                        </motion.div>
+                      ))}  
                       <motion.div
-                        key={item.id}
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ 
-                          duration: 0.1, 
-                          delay: index * 0.02,
-                          ease: "easeOut"
-                        }}
+                        transition={{ duration: 0.1, delay: 0.2 }}
                       >
                         <Button
                           variant="ghost"
-                          className={`h-16 w-full flex flex-col items-center justify-center gap-2 rounded-2xl transition-all duration-200 group hover:scale-105 ${
-                            isLogout 
-                              ? 'hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400' 
-                              : 'hover:bg-accent/50 hover:shadow-lg'
-                          }`}
-                          onClick={() => handleNavClick(item)}
+                          className="h-16 w-full flex flex-col items-center justify-center gap-2 rounded-2xl hover:bg-accent/50 hover:shadow-lg transition-all duration-200 group hover:scale-105"
+                          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                         >
-                          <div className={`relative p-2 rounded-xl transition-all duration-200 ${
-                            isLogout 
-                              ? 'group-hover:bg-red-100 dark:group-hover:bg-red-900/20' 
-                              : 'group-hover:bg-primary/10'
-                          }`}>
-                            {item.icon}
-                            {item.badge && (
-                              <Badge 
-                                variant="destructive" 
-                                className="absolute -top-1 -right-1 h-4 min-w-4 p-0 flex items-center justify-center text-xs animate-pulse"
-                              >
-                                {typeof item.badge === 'number' && item.badge > 99 ? '99+' : item.badge}
-                              </Badge>
-                            )}
+                          <div className="p-2 rounded-xl group-hover:bg-primary/10 transition-all duration-200">
+                            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                           </div>
-                          <span className="text-xs font-medium text-center leading-tight">{item.label}</span>
+                          <span className="text-xs font-medium text-center leading-tight">{theme === 'dark' ? 'Light' : 'Dark'}</span>
                         </Button>
                       </motion.div>
-                    );
-                  })}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -440,10 +431,10 @@ export function MobileBottomNav() {
         className="fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t border-border/30 z-30 lg:hidden mobile-bottom-nav shadow-2xl"
         style={{
           background: theme === 'dark' 
-            ? 'rgba(0, 0, 0, 0.3)' 
-            : 'rgba(255, 255, 255, 0.25)',
+            ? 'rgba(0, 0, 0, 0.85)' 
+            : 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(20px) saturate(180%)',
-          borderTop: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`
+          borderTop: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)'}`
         }}
       >
         
@@ -496,8 +487,8 @@ export function MobileBottomNav() {
                   size="sm"
                   className={`relative flex flex-col items-center justify-center h-14 w-14 rounded-2xl gap-1 transition-all duration-300 group ${
                     active 
-                      ? 'text-primary shadow-lg shadow-primary/20' 
-                      : 'text-muted-foreground hover:text-foreground hover:shadow-md'
+                      ? 'text-primary shadow-lg shadow-primary/20 bg-primary/10' 
+                      : `${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'} hover:bg-accent/60 hover:shadow-md`
                   }`}
                   onClick={() => handleNavClick(item)}
                 >

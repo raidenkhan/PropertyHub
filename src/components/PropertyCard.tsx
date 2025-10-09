@@ -28,8 +28,8 @@ export function PropertyCard(props: PropertyCardProps) {
     area,
     rating,
     reviews,
-    image,
     images,
+    image,
     isLiked = false,
     likesCount = 0,
     onLike,
@@ -48,8 +48,8 @@ export function PropertyCard(props: PropertyCardProps) {
   const [liked, setLiked] = useState(isLiked)
   const [likes, setLikes] = useState(likesCount)
   const [isLiking, setIsLiking] = useState(false)
-  
   // Handle like/unlike functionality
+  
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -148,13 +148,13 @@ export function PropertyCard(props: PropertyCardProps) {
         whileHover={{ y: -2 }}
         className="group w-full"
       >
-        <Link href={`/property/${id}`} className="block">
+        <Link href={`/property/${propertyId}`} className="block">
           <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900 h-full">
             <div className="flex flex-row h-full min-h-[140px] sm:min-h-[180px]">
               {/* Image Container */}
               <div className="relative w-1/3 flex-shrink-0">
                 <img
-                  src={image || "/placeholder.svg"}
+                  src={images?.[0] || image || "/placeholder.svg"}
                   alt={title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 absolute inset-0"
                   onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
@@ -238,7 +238,7 @@ export function PropertyCard(props: PropertyCardProps) {
     )
   }
 
-  // Grid view - Airbnb-style mobile-friendly design
+  // Grid view - Mobile-first optimized design
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -247,13 +247,13 @@ export function PropertyCard(props: PropertyCardProps) {
       whileHover={{ y: -2 }}
       className="group w-full"
     >
-      <Link href={`/property/${id}`} className="block">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border-0">
-          {/* Image Container - More compact for mobile */}
+      <Link href={`/property/${propertyId}`} className="block">
+        <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-800">
+          {/* Image Container - Optimized aspect ratio for mobile */}
           <div className="relative">
-            <div className="aspect-[5/4] sm:aspect-[4/3] w-full">
+            <div className="aspect-[3/2] sm:aspect-[4/3] w-full">
               <img
-                src={image || "/placeholder.svg"}
+                src={images?.[0] || image || "/placeholder.svg"}
                 alt={title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
@@ -261,11 +261,18 @@ export function PropertyCard(props: PropertyCardProps) {
               />
             </div>
             
-            {/* Enhanced Floating Like Button - Airbnb style */}
+            {/* Status Badge - Better positioned */}
+            <Badge
+              className={`absolute top-2 left-2 ${getStatusColor(status)} text-xs px-2 py-1 font-medium backdrop-blur-sm border-0 shadow-sm`}
+            >
+              {status}
+            </Badge>
+            
+            {/* Enhanced Like Button - Larger touch target */}
             <Button
               variant="ghost"
               size="sm"
-              className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 hover:scale-110 transition-all duration-200 rounded-full shadow-sm group"
+              className="absolute top-2 right-2 w-10 h-10 sm:w-8 sm:h-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 hover:scale-110 transition-all duration-200 rounded-full shadow-sm group"
               onClick={handleLike}
               disabled={isLiking}
               aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
@@ -283,60 +290,54 @@ export function PropertyCard(props: PropertyCardProps) {
               )}
             </Button>
             
-            {/* Likes Count Badge */}
+            {/* Likes Count Badge - Better positioning */}
             {likes > 0 && (
-              <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+              <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
                 {likes} {likes === 1 ? 'like' : 'likes'}
               </div>
             )}
-
-            {/* Status Badge - Top left, more subtle */}
-            <Badge
-              className={`absolute top-3 left-3 ${getStatusColor(status)} text-xs px-2 py-1 font-medium backdrop-blur-sm border-0`}
-            >
-              {status}
-            </Badge>
           </div>
 
-          {/* Content Container - More compact */}
-          <div className="p-4">
-            {/* Title and Location - Tighter spacing */}
-            <div className="mb-2">
-              <h3 className="font-semibold text-base sm:text-lg text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">
-                {title}
-              </h3>
-              <div className="flex items-center gap-1 text-muted-foreground mt-1">
-                <MapPin className="w-3 h-3" />
-                <span className="text-sm truncate">{location}</span>
-              </div>
+          {/* Content Container - Optimized spacing */}
+          <div className="p-3 sm:p-4">
+            {/* Title - Better mobile sizing */}
+            <h3 className="font-semibold text-sm sm:text-base text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight mb-1">
+              {title}
+            </h3>
+            
+            {/* Location */}
+            <div className="flex items-center gap-1 text-muted-foreground mb-2">
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="text-xs sm:text-sm truncate">{location}</span>
             </div>
 
-            {/* Property Details - Horizontal layout */}
+            {/* Property Details - More compact */}
             {(bedrooms || bathrooms || area) && (
-              <div className="flex items-center gap-3 text-muted-foreground text-xs sm:text-sm mb-2">
-                {bedrooms && <span>{bedrooms} bed{bedrooms > 1 ? 's' : ''}</span>}
-                {bathrooms && <span>{bathrooms} bath{bathrooms > 1 ? 's' : ''}</span>}
-                {area && <span>{area}</span>}
+              <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
+                {bedrooms && <span className="flex items-center gap-1">{bedrooms}🛏️</span>}
+                {bathrooms && <span className="flex items-center gap-1">{bathrooms}🚿</span>}
+                {area && <span className="text-xs">{area}</span>}
               </div>
             )}
 
-            {/* Rating and Price Row */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <span className="font-medium text-foreground text-sm">{rating}</span>
-                <span className="text-sm text-muted-foreground">({reviews})</span>
-              </div>
-              <div className="text-right">
-                <div className="font-bold text-lg sm:text-xl text-foreground">
+            {/* Bottom Row - Price and Rating */}
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="font-bold text-sm sm:text-base text-foreground">
                   {price}
-                  {status === "Rent" && <span className="text-sm text-muted-foreground font-normal"> /mo</span>}
+                  {status === "Rent" && <span className="text-xs text-muted-foreground font-normal"> /mo</span>}
                 </div>
                 {type && (
                   <Badge variant="outline" className="text-xs mt-1 bg-gray-50 dark:bg-gray-800 text-muted-foreground">
                     {type}
                   </Badge>
                 )}
+              </div>
+              
+              <div className="flex items-center gap-1 text-right">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span className="font-medium text-foreground text-xs">{rating}</span>
+                <span className="text-xs text-muted-foreground">({reviews})</span>
               </div>
             </div>
           </div>

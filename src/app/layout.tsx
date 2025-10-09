@@ -3,6 +3,8 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/lib/auth/authContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { DataCacheProvider } from "@/contexts/DataCacheContext";
+import { GlobalCacheProvider } from "@/contexts/GlobalCacheContext";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteTransition } from "@/components/system/RouteTransition";
 import { NotificationToastProvider } from '@/components/NotificationToast';
@@ -87,20 +89,24 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <WishlistProvider>
-              <NotificationProvider>
-                <NotificationToastProvider>
-                  <PWAProvider>
-                    <RouteTransition>
-                      {children}
-                    </RouteTransition>
-                    <MobileBottomNav />
-                    <Toaster />
-                    <InstallPrompt />
-                  </PWAProvider>
-                </NotificationToastProvider>
-              </NotificationProvider>
-            </WishlistProvider>
+            <GlobalCacheProvider>
+              <DataCacheProvider>
+                <WishlistProvider>
+                  <NotificationProvider>
+                    <NotificationToastProvider>
+                      <PWAProvider>
+                        <RouteTransition>
+                          {children}
+                        </RouteTransition>
+                        <MobileBottomNav />
+                        <Toaster />
+                        <InstallPrompt />
+                      </PWAProvider>
+                    </NotificationToastProvider>
+                  </NotificationProvider>
+                </WishlistProvider>
+              </DataCacheProvider>
+            </GlobalCacheProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
