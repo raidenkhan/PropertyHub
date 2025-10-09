@@ -96,18 +96,24 @@ export function GlobalCacheProvider({ children }: { children: ReactNode }) {
     const item = cache[key];
     
     // Check memory cache first
-    if (item) {
+    if (item && item.data?.length > 0) {
       const expiry = customExpiry || item.expiry || CACHE_CONFIG.DEFAULT_EXPIRY;
-      return Date.now() - item.timestamp < expiry;
+      const isValid = Date.now() - item.timestamp < expiry;
+      console.log(`📊 Cache check for ${key}: ${isValid ? 'VALID' : 'EXPIRED'} (${item.data.length} items, age: ${Math.round((Date.now() - item.timestamp) / 1000)}s)`);
+      return isValid;
     }
     
     // Check localStorage if not in memory
     const stored = await cacheUtils.has(`global_${key}`);
     if (stored) {
-      await loadFromStorage(key);
-      return true;
+      const loadedData = await loadFromStorage(key);
+      if (loadedData && loadedData.length > 0) {
+        console.log(`📦 Loaded ${key} from localStorage: ${loadedData.length} items`);
+        return true;
+      }
     }
     
+    console.log(`❌ No valid cache found for ${key}`);
     return false;
   }, [cache, loadFromStorage]);
 
@@ -135,7 +141,9 @@ export function GlobalCacheProvider({ children }: { children: ReactNode }) {
 
   // Fetch all properties with caching
   const fetchAllProperties = useCallback(async (force = false): Promise<void> => {
-    if (!force && await isCacheValid('allProperties', CACHE_CONFIG.LONG_EXPIRY)) {
+    // Only use cache if it exists AND is valid (and not forcing refresh)
+    if (!force && cache.allProperties?.data?.length > 0 && await isCacheValid('allProperties', CACHE_CONFIG.LONG_EXPIRY)) {
+      console.log('✅ Using valid cached properties:', cache.allProperties.data.length);
       return; // Return cached data
     }
 
@@ -175,7 +183,9 @@ export function GlobalCacheProvider({ children }: { children: ReactNode }) {
 
   // Fetch user's properties with caching
   const fetchMyProperties = useCallback(async (force = false): Promise<void> => {
-    if (!force && await isCacheValid('myProperties')) {
+    // Only use cache if it exists AND is valid (and not forcing refresh)
+    if (!force && cache.myProperties?.data?.length > 0 && await isCacheValid('myProperties')) {
+      console.log('✅ Using valid cached my properties:', cache.myProperties.data.length);
       return;
     }
 
