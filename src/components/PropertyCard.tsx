@@ -160,34 +160,52 @@ export function PropertyCard(props: PropertyCardProps) {
                   onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
                   loading="lazy"
                 />
+                {/* Status and Property Type Badges */}
+                <div className="absolute top-3 left-3 flex flex-col gap-1">
+                  {status && (
+                    <Badge className={`text-xs px-2 py-1 font-medium ${getStatusColor(status)}`}>
+                      {status}
+                    </Badge>
+                  )}
+                  {type && (
+                    <Badge variant="secondary" className="text-xs px-2 py-1 bg-background/90 text-foreground">
+                      {type}
+                    </Badge>
+                  )}
+                  {isVerified && (
+                    <Badge className="text-xs px-2 py-1 bg-primary/90 text-primary-foreground">
+                      ✓ Verified
+                    </Badge>
+                  )}
+                </div>
+
                 {/* Enhanced Like Button */}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 rounded-full shadow-sm group"
+                  className="absolute top-3 right-3 w-9 h-9 bg-background/90 backdrop-blur-sm hover:bg-background transition-all duration-200 rounded-full shadow-lg group"
                   onClick={handleLike}
                   disabled={isLiking}
                   aria-label={liked ? "Remove from wishlist" : "Add to wishlist"}
                 >
                   {isLiking ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-gray-600 dark:text-gray-400" />
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                   ) : (
                     <Heart
                       className={`w-4 h-4 transition-all duration-200 group-hover:scale-110 ${
                         liked 
-                          ? "fill-red-500 text-red-500 animate-pulse" 
-                          : "text-gray-600 dark:text-gray-400 group-hover:text-red-500"
+                          ? "fill-red-500 text-red-500" 
+                          : "text-muted-foreground group-hover:text-red-500"
                       }`}
                     />
                   )}
                 </Button>
                 
-                {/* Likes Count Badge */}
-                {likes > 0 && (
-                  <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-                    {likes} {likes === 1 ? 'like' : 'likes'}
-                  </div>
-                )}
+                {/* Quick Stats */}
+                <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs text-muted-foreground">
+                  <Eye className="w-3 h-3" />
+                  <span>{Math.floor(Math.random() * 100) + 50}</span>
+                </div>
               </div>
 
               {/* Content Container */}

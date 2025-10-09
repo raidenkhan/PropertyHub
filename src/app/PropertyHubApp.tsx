@@ -17,7 +17,9 @@ import { convertPropertyData, groupPropertiesByLocationClusters, LocationCategor
 import { useGlobalCache } from "@/contexts/GlobalCacheContext"
 import { UnsortedPropertiesView } from "@/components/UnsortedPropertiesView"
 import { ResponsiveLocationButton, CategoryLocationDisplay } from "@/components/ui/responsive-text"
+import { FeaturedProperties } from "@/components/FeaturedProperties"
 import { Property, PropertyCoordinates } from "@/types/property"
+import { useAuth } from "@/lib/auth/authContext"
 
 // Helper function to parse price string to number for comparison
 const parsePriceToNumber = (price: string): number => {
@@ -97,11 +99,11 @@ function LocationCategories({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const router = useRouter()
 
+
   const handleCategoryClick = (category: LocationCategory) => {
     setSelectedCategory(category.id)
     onCategorySelect(category)
   }
-
   const handleShowOnMap = (category: LocationCategory) => {
     router.push(`/map?category=${encodeURIComponent(category.title)}`)
   }
@@ -228,7 +230,7 @@ function LocationCategories({
             >
               {filteredProperties.map((property, propertyIndex) => (
                 <PropertyCard
-                  key={property.id}
+                  key={property.propertyId}
                   {...property}
                   onLike={onLike}
                   delay={propertyIndex * 0.1}
@@ -261,6 +263,8 @@ export default function App() {
     }
     return "grid"
   })
+  
+  const {user}=useAuth()
 
   // Handle responsive default view mode changes
   useEffect(() => {
@@ -443,7 +447,7 @@ export default function App() {
   }, [locationSortingEnabled, clusteredCategories, filteredProperties, filters, loading])
 
   return (
-    <div className="min-h-screen relative bg-background dark:bg-gray-900">
+    <div className="min-h-screen relative bg-background">
       <AnimatedBackground />
 
       <Header />
@@ -453,68 +457,105 @@ export default function App() {
         onFiltersChange={handleFiltersChange}
       />
 
-      {/* Hero Section */}
+      {/* Hero Section - Enhanced with better spacing and layout */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.4 }}
-        className="px-6 py-16 relative"
+        className="px-6 py-20 md:py-28 relative"
       >
-        <div className="max-w-7xl mx-auto text-center">
-          <motion.h1
-            className="text-4xl md:text-6xl font-bold text-foreground dark:text-white mb-6 leading-tight"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
-            <TypingAnimation
-              text="Find Your Perfect Property"
-              className="bg-gradient-to-r from-blue-600 via-violet-600 to-emerald-600 bg-clip-text text-transparent dark:from-blue-500 dark:via-violet-500 dark:to-emerald-500"
-              speed={80}
-            />
-          </motion.h1>
+        <div className="max-w-6xl mx-auto text-center space-y-8">
+          <motion.div className="space-y-6">
+            <motion.h1
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
+              <TypingAnimation
+                text="Find Your Perfect Property"
+                className="gradient-text"
+                speed={80}
+              />
+            </motion.h1>
 
-          <motion.p
-            className="text-xl md:text-2xl text-muted-foreground dark:text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 1.5 }}
-          >
-            Discover premium properties across Nigeria with our advanced search and personalized recommendations
-          </motion.p>
+            <motion.p
+              className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.5 }}
+            >
+              Discover premium properties across Nigeria with our advanced search and personalized recommendations
+            </motion.p>
+          </motion.div>
 
-          {/* Enhanced Quick Stats with animations */}
+          {/* Enhanced Quick Stats with animations and icons */}
           <motion.div
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
+            className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-5xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 2 }}
           >
             {[
-              { number: loading ? "..." : `${allProperties.length}+`, label: "Properties", delay: 0 },
-              { number: loading ? "..." : `${locationSortingEnabled ? clusteredCategories.length : categories.length}+`, label: "Locations", delay: 0.1 },
-              { number: "5,000+", label: "Happy Clients", delay: 0.2 },
-              { number: "4.9", label: "Average Rating", delay: 0.3 },
+              { 
+                number: loading ? "..." : `${allProperties.length}+`, 
+                label: "Properties", 
+                delay: 0,
+                icon: "🏠"
+              },
+              { 
+                number: loading ? "..." : `${locationSortingEnabled ? clusteredCategories.length : categories.length}+`, 
+                label: "Locations", 
+                delay: 0.1,
+                icon: "📍"
+              },
+              { 
+                number: "5,000+", 
+                label: "Happy Clients", 
+                delay: 0.2,
+                icon: "😊"
+              },
+              { 
+                number: "4.9", 
+                label: "Average Rating", 
+                delay: 0.3,
+                icon: "⭐"
+              },
             ].map((stat, index) => (
               <motion.div
                 key={index}
-                className="bg-background/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-border dark:bg-gray-800/60 dark:border-gray-700"
+                className="bg-background/80 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-border/50 group hover:border-primary/20"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 2.2 + stat.delay }}
-                whileHover={{ scale: 1.05, y: -5 }}
+                whileHover={{ scale: 1.02, y: -8 }}
               >
-                <div className="text-3xl md:text-4xl font-bold text-foreground dark:text-white mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-sm md:text-base text-muted-foreground dark:text-gray-300 font-medium">
-                  {stat.label}
+                <div className="text-center space-y-3">
+                  <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">
+                    {stat.icon}
+                  </div>
+                  <div className="text-3xl md:text-4xl font-bold text-foreground">
+                    {stat.number}
+                  </div>
+                  <div className="text-sm md:text-base text-muted-foreground font-medium">
+                    {stat.label}
+                  </div>
                 </div>
               </motion.div>
             ))}
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Featured Properties Section - Personalization */}
+      {!loading && allProperties.length > 0 && (
+        <FeaturedProperties 
+          properties={allProperties} 
+          onLike={handleLike}
+          title={user ? `Recommended for You` : "Featured Properties"}
+          subtitle={user ? `Properties we think you'll love based on your preferences` : "Hand-picked premium properties"}
+        />
+      )}
 
       {/* Results Count */}
       {!loading && (filters.location || filters.propertyType || filters.priceRange || filters.bedrooms) && (
@@ -547,8 +588,8 @@ export default function App() {
             variant={locationSortingEnabled ? "default" : "outline"}
             className={`flex items-center gap-2 px-6 py-3 transition-all duration-300 ${
               locationSortingEnabled 
-                ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                : "bg-background hover:bg-accent dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
+                ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+                : "bg-background hover:bg-accent border-border"
             }`}
             aria-label={`${locationSortingEnabled ? 'Disable' : 'Enable'} location-based sorting`}
           >
@@ -598,7 +639,7 @@ export default function App() {
           <div className="max-w-7xl mx-auto px-6 py-6">
             <button
               onClick={handleBackToCategories}
-              className="text-primary hover:text-primary/80 font-medium mb-6 flex items-center gap-2 dark:text-blue-400 dark:hover:text-blue-300"
+              className="text-primary hover:text-primary/80 font-medium mb-6 flex items-center gap-2"
               aria-label="Back to categories"
             >
               ← Back to categories
@@ -621,44 +662,44 @@ export default function App() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.2 }}
-        className="bg-gradient-to-r from-slate-800 to-slate-900 dark:from-gray-900 dark:to-gray-950 text-white py-12 mt-16 lg:block hidden"
+        className="bg-muted text-foreground py-12 mt-16 lg:block hidden"
       >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             {/* Brand Section */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">P</span>
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">P</span>
               </div>
               <div>
-                <h3 className="font-bold text-lg text-white">PropertyHub</h3>
-                <p className="text-sm text-gray-400">Nigeria's Leading Real Estate Platform</p>
+                <h3 className="font-bold text-lg text-foreground">PropertyHub</h3>
+                <p className="text-sm text-muted-foreground">Nigeria's Leading Real Estate Platform</p>
               </div>
             </div>
 
             {/* Quick Links */}
             <div className="flex flex-wrap justify-center gap-6 text-sm">
-              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors hover:underline">
                 Buy Properties
               </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors hover:underline">
                 Rent Properties
               </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors hover:underline">
                 About Us
               </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors hover:underline">
                 Contact
               </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors hover:underline">
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors hover:underline">
                 Help Center
               </a>
             </div>
           </div>
 
           {/* Copyright */}
-          <div className="border-t border-gray-700 mt-8 pt-6 text-center">
-            <p className="text-gray-400 text-sm">
+          <div className="border-t border-border mt-8 pt-6 text-center">
+            <p className="text-muted-foreground text-sm">
               &copy; 2024 PropertyHub. All rights reserved. Made with ❤️ in Nigeria.
             </p>
           </div>

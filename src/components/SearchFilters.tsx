@@ -158,30 +158,54 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.2 }}
-      className="bg-background/70 backdrop-blur-md border-b border-border sticky top-[73px] z-40 dark:bg-gray-900/70 dark:border-gray-700"
+      className="bg-background/70 backdrop-blur-md border-b border-border sticky top-[73px] z-40"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Collapsible Header */}
         <div className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
             <div className="flex items-center gap-2">
-              <Filter className={`w-4 h-4 ${activeFilters.length > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`} />
-              <h3 className="text-sm font-medium text-foreground dark:text-gray-200">
+              <Filter className={`w-4 h-4 ${activeFilters.length > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
+              <h3 className="text-sm font-medium text-foreground">
                 Search & Filters
               </h3>
             </div>
+            
+            {/* Quick Filter Categories */}
+            <div className="hidden lg:flex items-center gap-2 ml-4">
+              {propertyTypes.slice(0, 4).map((type) => {
+                const Icon = type.icon
+                const isActive = activeFilters.includes(type.id)
+                return (
+                  <Button
+                    key={type.id}
+                    size="sm"
+                    variant={isActive ? "default" : "outline"}
+                    className={`h-8 px-3 text-xs gap-1 transition-all duration-200 ${
+                      isActive 
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                        : 'hover:bg-accent hover:text-accent-foreground'
+                    }`}
+                    onClick={() => toggleFilter(type.id)}
+                  >
+                    <Icon className="w-3 h-3" />
+                    {type.label}
+                  </Button>
+                )
+              })}
+            </div>
             {activeFilters.length > 0 && (
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200">
-                  {activeFilters.length} active
-                </Badge>
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                {activeFilters.length} active
+              </Badge>
                 {!isExpanded && activeFilters.length > 0 && (
                   <div className="hidden sm:flex items-center gap-1">
                     {activeFilters.slice(0, 3).map((filter) => (
                       <Badge
                         key={filter}
                         variant="outline"
-                        className="text-xs px-2 py-1 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700"
+                        className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20"
                       >
                         {filter}
                       </Badge>
@@ -198,7 +222,7 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
             variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-2 text-sm hover:bg-accent dark:hover:bg-gray-700"
+            className="flex items-center gap-2 text-sm hover:bg-accent"
           >
             {isExpanded ? 'Hide Filters' : 'Show Filters'}
             {isExpanded ? 
@@ -238,18 +262,20 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
                 </Button>
                 <div className="flex items-center gap-1 bg-background rounded-lg p-1 border">
                   <Button
-                    variant={viewMode === "grid" ? "default" : "ghost"}
+                    variant={hasMounted && viewMode === "grid" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => onViewModeChange("grid")}
                     className="w-8 h-7 p-0"
+                    aria-label="Grid view"
                   >
                     <Grid3X3 className="w-4 h-4" />
                   </Button>
                   <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
+                    variant={hasMounted && viewMode === "list" ? "default" : "ghost"}
                     size="sm"
                     onClick={() => onViewModeChange("list")}
                     className="w-8 h-7 p-0"
+                    aria-label="List view"
                   >
                     <List className="w-4 h-4" />
                   </Button>
@@ -458,21 +484,21 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
             </Button>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-background rounded-full p-1 border border-border dark:bg-gray-800 dark:border-gray-600">
+            <div className="flex items-center gap-1 bg-background rounded-full p-1 border border-border">
               <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
+                variant={hasMounted && viewMode === "grid" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => onViewModeChange("grid")}
-                className="w-10 h-10 p-0 rounded-full dark:hover:bg-gray-700 dark:text-gray-300"
+                className="w-10 h-10 p-0 rounded-full"
                 aria-label="Grid view"
               >
                 <Grid3X3 className="w-5 h-5" />
               </Button>
               <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
+                variant={hasMounted && viewMode === "list" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => onViewModeChange("list")}
-                className="w-10 h-10 p-0 rounded-full dark:hover:bg-gray-700 dark:text-gray-300"
+                className="w-10 h-10 p-0 rounded-full"
                 aria-label="List view"
               >
                 <List className="w-5 h-5" />
@@ -542,19 +568,19 @@ export function SearchFilters({ viewMode, onViewModeChange, onFiltersChange }: S
                   <h4 className="text-sm font-semibold text-foreground dark:text-gray-200">View Mode</h4>
                   <div className="flex gap-2">
                     <Button
-                      variant={viewMode === "grid" ? "default" : "outline"}
+                      variant={hasMounted && viewMode === "grid" ? "default" : "outline"}
                       size="sm"
                       onClick={() => onViewModeChange("grid")}
-                      className="flex-1 rounded-full dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                      className="flex-1 rounded-full"
                       aria-label="Grid view"
                     >
                       <Grid3X3 className="w-5 h-5 mx-auto" />
                     </Button>
                     <Button
-                      variant={viewMode === "list" ? "default" : "outline"}
+                      variant={hasMounted && viewMode === "list" ? "default" : "outline"}
                       size="sm"
                       onClick={() => onViewModeChange("list")}
-                      className="flex-1 rounded-full dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                      className="flex-1 rounded-full"
                       aria-label="List view"
                     >
                       <List className="w-5 h-5 mx-auto" />
