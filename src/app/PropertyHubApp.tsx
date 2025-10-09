@@ -18,6 +18,7 @@ import { useGlobalCache } from "@/contexts/GlobalCacheContext"
 import { UnsortedPropertiesView } from "@/components/UnsortedPropertiesView"
 import { ResponsiveLocationButton, CategoryLocationDisplay } from "@/components/ui/responsive-text"
 import { FeaturedProperties } from "@/components/FeaturedProperties"
+import { Testimonials } from "@/components/Testimonials"
 import { Property, PropertyCoordinates } from "@/types/property"
 import { useAuth } from "@/lib/auth/authContext"
 
@@ -657,12 +658,17 @@ export default function App() {
         selectedCategory={selectedCategory ? selectedCategory : undefined}
       />
 
-      {/* Compact Footer - Hidden on mobile when bottom nav is present */}
+      {/* Testimonials Section */}
+      {!loading && allProperties.length > 0 && (
+        <Testimonials />
+      )}
+
+      {/* Footer - Now visible on all screen sizes */}
       <motion.footer
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1.2 }}
-        className="bg-muted text-foreground py-12 mt-16 lg:block hidden"
+        className="bg-muted text-foreground py-12 mt-16"
       >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
