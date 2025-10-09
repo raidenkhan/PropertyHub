@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (email?: string, password?: string, isGoogleAuth?: boolean, accessToken?: string, refreshToken?: string) => Promise<void>;
   signup: (email: string, password: string, name: string,phone:string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (userData: Partial<User>) => Promise<User>;
   checkUser: () => void;
   loginWithGoogle: () => Promise<void>;
 }
@@ -112,6 +113,17 @@ interface AuthContextType {
        setIsLoading(false);
      }
    };
+
+   const updateUser = async (userData: Partial<User>) => {
+     try {
+       const updatedUser = await authService.updateUser(userData);
+       setUser(updatedUser);
+       return updatedUser;
+     } catch (error) {
+       console.error('Update user failed:', error);
+       throw error;
+     }
+   };
  
   const value = {
     user,
@@ -121,6 +133,7 @@ interface AuthContextType {
     login,
     signup,
     logout,
+    updateUser,
     checkUser,
     loginWithGoogle,
   };

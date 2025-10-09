@@ -567,10 +567,17 @@ export default function UserDashboard() {
                                   <div className="flex items-start gap-3">
                                     {/* Notification Icon */}
                                     <div className={`flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-sm ${
-                                      notificationService.getNotificationColor(notification.type)
+                                      notification.type.includes('PROPERTY') ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400' :
+                                      notification.type.includes('TRANSACTION') ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' :
+                                      notification.type.includes('MESSAGE') ? 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400' :
+                                      'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400'
                                     }`}>
                                       <span className="text-base md:text-lg">
-                                        {notificationService.getNotificationIcon(notification.type)}
+                                        {notification.type.includes('PROPERTY') ? '🏠' :
+                                         notification.type.includes('TRANSACTION') ? '💰' :
+                                         notification.type.includes('MESSAGE') ? '💬' :
+                                         '🔔'
+                                        }
                                       </span>
                                     </div>
                                     
@@ -603,7 +610,7 @@ export default function UserDashboard() {
                                       
                                       <div className="flex items-center justify-between">
                                         <p className="text-xs text-muted-foreground">
-                                          {notificationService.formatTimeAgo(notification.createdAt)}
+                                          {new Date(notification.createdAt).toLocaleDateString()}
                                         </p>
                                         
                                         {/* Related item info */}

@@ -6,23 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Home, Plus, MapPin, Eye } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { OptimizedImage } from "@/components/ui/optimized-image"
-
-interface Property {
-  id: number;
-  title: string;
-  description?: string;
-  location: string;
-  price: number;
-  status: string;
-  type?: string;
-  images: string[];
-  amenities?: string[];
-  bedrooms?: number;
-  bathrooms?: number;
-  area?: number;
-  createdAt: string;
-  updatedAt?: string;
-}
+import { Property } from "@/types/property"
 
 interface PropertiesTabProps {
   properties: Property[];
@@ -64,8 +48,9 @@ const PropertiesTabComponent = ({ properties }: PropertiesTabProps) => {
                     />
                   </div>
                   <Badge className={`absolute top-1 right-1 text-xs px-1 py-0.5 ${
-                    property.status === "LISTED" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
-                    "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                    property.status === "Available" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
+                    property.status === "Sold" ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" :
+                    "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                   }`}>
                     {property.status}
                   </Badge>
@@ -77,7 +62,7 @@ const PropertiesTabComponent = ({ properties }: PropertiesTabProps) => {
                     <span className="text-xs">{property.location}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-sm">₦{property.price.toLocaleString()}</span>
+                    <span className="font-bold text-sm">{property.price}</span>
                     <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={() => router.push(`/properties/${property.id}`)}>
                       <Eye className="w-3 h-3 mr-1" />
                       View
@@ -107,8 +92,8 @@ const PropertiesTabComponent = ({ properties }: PropertiesTabProps) => {
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-semibold line-clamp-2">{property.title}</h3>
                   <Badge className={
-                    property.status === "LISTED" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
-                    property.status === "SOLD" ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" :
+                    property.status === "Available" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
+                    property.status === "Sold" ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" :
                     "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                   }>
                     {property.status}
@@ -116,7 +101,7 @@ const PropertiesTabComponent = ({ properties }: PropertiesTabProps) => {
                 </div>
                 <p className="text-sm text-muted-foreground mb-2">{property.location}</p>
                 <div className="flex justify-between items-center">
-                  <span className="font-bold">₦{property.price.toLocaleString()}</span>
+                  <span className="font-bold">{property.price}</span>
                   <Button variant="ghost" size="sm" onClick={() => router.push(`/properties/${property.id}`)}>
                     View
                   </Button>

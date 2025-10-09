@@ -298,6 +298,37 @@ class AuthService {
     return this.accessToken;
   }
 
+  // ✅ Update user profile
+  async updateUser(userData: Partial<User>): Promise<User> {
+    if (!this.user) {
+      throw new Error('No user is currently logged in');
+    }
+
+    try {
+      const response = await this.authenticatedFetch(`${BACKEND_BASE_URL}/users/${this.user.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update user profile');
+      }
+
+      const updatedUserData = await response.json();
+      const validatedUser = validateUser(updatedUserData);
+      this.setUser(validatedUser);
+
+      return validatedUser;
+    } catch (error) {
+      console.error('Update user error:', error);
+      throw error;
+    }
+  }
+
  
   hasRole(role: string): boolean {
     return this.user?.roles?.includes(role) || false;

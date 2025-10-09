@@ -26,8 +26,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     name: '',
     email: '',
     phone: '',
-    bio: '',
-    location: ''
+
   })
 
   useEffect(() => {
@@ -36,8 +35,8 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         name: user.name || '',
         email: user.email || '',
         phone: user.phone || '',
-        bio: user.bio || '',
-        location: user.location || ''
+      //  bio: user.bio || '',
+        //location: user.location || ''
       })
     }
   }, [user])
@@ -54,11 +53,8 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     
     setIsLoading(true)
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-      
-      // Update user context
-      // await updateUser(formData)
+      // Update user profile with real API call
+      await updateUser(formData)
       
       toast({
         title: "✅ Profile Updated",
@@ -67,9 +63,10 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       
       setIsEditing(false)
     } catch (error) {
+      console.error('Profile update error:', error)
       toast({
-        title: "❌ Update Failed",
-        description: "Failed to update profile. Please try again.",
+        title: "❌ Update Failed", 
+        description: error instanceof Error ? error.message : "Failed to update profile. Please try again.",
         variant: "destructive"
       })
     } finally {
@@ -83,8 +80,8 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         name: user.name || '',
         email: user.email || '',
         phone: user.phone || '',
-        bio: user.bio || '',
-        location: user.location || ''
+       //// bio: user.bio || '',
+        //location: user.location || ''
       })
     }
     setIsEditing(false)
@@ -148,7 +145,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   <div className="flex flex-col sm:flex-row items-center gap-6">
                     <div className="relative">
                       <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
-                        <AvatarImage src={user.avatar} alt={user.name} />
+                        {/* <AvatarImage src={user.avatar} alt={user.name} /> */}
                         <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-blue-500 text-white text-2xl font-bold">
                           {(user.name?.charAt(0) || 'U').toUpperCase()}
                         </AvatarFallback>
@@ -168,7 +165,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         <Badge variant="secondary" className="capitalize">
                           {user.roles?.[0] || 'Member'}
                         </Badge>
-                        {user.isVerified && (
+                        {user.email && (
                           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                             <Shield className="w-3 h-3 mr-1" />
                             Verified
@@ -304,7 +301,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                             <MapPin className="w-4 h-4" />
                             Location
                           </label>
-                          {isEditing ? (
+                          {/* {isEditing ? (
                             <Input
                               value={formData.location}
                               onChange={(e) => handleInputChange('location', e.target.value)}
@@ -314,7 +311,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                             <p className="text-foreground py-2 px-3 bg-muted/30 rounded-md">
                               {user.location || 'Not provided'}
                             </p>
-                          )}
+                          )} */}
                         </div>
                       </div>
                       
@@ -322,7 +319,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         <label className="text-sm font-medium text-foreground">
                           Bio
                         </label>
-                        {isEditing ? (
+                        {/* {isEditing ? (
                           <Textarea
                             value={formData.bio}
                             onChange={(e) => handleInputChange('bio', e.target.value)}
@@ -333,7 +330,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                           <p className="text-foreground py-2 px-3 bg-muted/30 rounded-md min-h-[80px]">
                             {user.bio || 'No bio provided'}
                           </p>
-                        )}
+                        )} */}
                       </div>
                     </CardContent>
                   </Card>
