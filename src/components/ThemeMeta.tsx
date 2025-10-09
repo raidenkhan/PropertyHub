@@ -17,14 +17,14 @@ export function ThemeMeta() {
     // Define theme colors based on your black/white theme
     const themeColors = {
       light: {
-        primary: "#030213",      // Your light theme primary
-        background: "#ffffff",   // Your light theme background
-        surface: "#f8fafc",     // Your light theme secondary
+        primary: "#1f2937",      // Dark gray for light theme
+        background: "#1f2937",   // Dark gray background
+        surface: "#374151",     // Slightly lighter gray
       },
       dark: {
-        primary: "#fafafa",      // Your dark theme primary  
-        background: "#030213",   // Your dark theme background
-        surface: "#1a1a2e",     // Your dark theme card color
+        primary: "#111827",      // Very dark gray
+        background: "#111827",   // Very dark gray background
+        surface: "#1f2937",     // Dark gray for surfaces
       }
     }
 

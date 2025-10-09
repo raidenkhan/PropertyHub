@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "PropertyHub",
   },
   other: {
@@ -53,7 +53,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link
           href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
@@ -63,13 +63,13 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         
         {/* PWA Meta Tags */}
-        <meta name="theme-color" content="#ffffff" />
-        <meta name="background-color" content="#ffffff" />
+        <meta name="theme-color" content="#1f2937" />
+        <meta name="background-color" content="#111827" />
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, user-scalable=yes" />
         
         {/* iOS Meta Tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="PropertyHub" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         
@@ -78,18 +78,19 @@ export default function RootLayout({
         <meta name="application-name" content="PropertyHub" />
         
         {/* Microsoft Meta Tags */}
-        <meta name="msapplication-TileColor" content="#3b82f6" />
+        <meta name="msapplication-TileColor" content="#111827" />
         <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
       </head>
      
       <body className="antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
           <AuthProvider>
+            <ThemeMeta />
             <GlobalCacheProvider>
               <DataCacheProvider>
                 <WishlistProvider>
