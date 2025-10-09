@@ -12,6 +12,7 @@ import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { PWAProvider } from '@/components/PWAProvider';
 import { WishlistProvider } from '@/lib/hooks/useWishlist';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { ThemeMeta } from '@/components/ThemeMeta';
 
 export const metadata: Metadata = {
   title: "PropertyHub - Real Estate Marketplace",
@@ -62,7 +63,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         
         {/* PWA Meta Tags */}
-        <meta name="theme-color" content="#3b82f6" />
+        <meta name="theme-color" content="#ffffff" />
         <meta name="background-color" content="#ffffff" />
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, user-scalable=yes" />
         
