@@ -23,7 +23,19 @@ import { Roles } from '../auth/roles.decorator';
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionService) {}
 
-
+ @Get('history')
+  async getHistory(@Req() req, @Query('role') role: 'buyer' | 'seller' | 'all' = 'all') {
+    try {
+      const history = await this.transactionsService.getTransactionHistory(req.user.userId, role);
+      
+      return {
+        status: 'success',
+        data: history,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 @Get(':id')
 async getTransaction(@Param('id', ParseIntPipe) id: number, @Req() req) {
   try {
@@ -71,19 +83,7 @@ async getTransaction(@Param('id', ParseIntPipe) id: number, @Req() req) {
   /**
    * Get transaction history for the current user
    */
-  @Get('history')
-  async getHistory(@Req() req, @Query('role') role: 'buyer' | 'seller' | 'all' = 'all') {
-    try {
-      const history = await this.transactionsService.getTransactionHistory(req.user.userId, role);
-      
-      return {
-        status: 'success',
-        data: history,
-      };
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
+ 
 
   /**
    * Get transaction statistics for the current user
