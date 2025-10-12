@@ -126,13 +126,13 @@ export function PropertyCard(props: PropertyCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Available":
-        return "bg-emerald-500/10 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-800"
+        return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
       case "Sold":
-        return "bg-red-500/10 text-red-600 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-800"
+        return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
       case "Rent":
-        return "bg-blue-500/10 text-blue-600 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-800"
+        return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
       default:
-        return "bg-muted/50 text-muted-foreground border-border"
+        return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600"
     }
   }
   const handleViewDetails = () => {
@@ -202,7 +202,7 @@ export function PropertyCard(props: PropertyCardProps) {
                 </Button>
                 
                 {/* Quick Stats */}
-                <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-background/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs text-muted-foreground">
+                <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-black/70 text-white backdrop-blur-sm rounded-full px-2 py-1 text-xs">
                   <Eye className="w-3 h-3" />
                   <span>{Math.floor(Math.random() * 100) + 50}</span>
                 </div>
@@ -216,7 +216,7 @@ export function PropertyCard(props: PropertyCardProps) {
                     <h3 className="font-semibold text-xl text-foreground group-hover:text-primary transition-colors line-clamp-2">
                       {title}
                     </h3>
-                    <div className="flex items-center gap-2 text-muted-foreground mt-2">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 mt-2">
                       <MapPin className="w-4 h-4" />
                       <span className="text-base">{location}</span>
                     </div>
@@ -224,7 +224,7 @@ export function PropertyCard(props: PropertyCardProps) {
 
                   {/* Property Details & Rating */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-muted-foreground text-sm">
+                    <div className="flex items-center gap-4 text-gray-600 dark:text-gray-300 text-sm">
                       {bedrooms && <span>{bedrooms} beds</span>}
                       {bathrooms && <span>{bathrooms} baths</span>}
                       {area && <span>{area}</span>}
@@ -232,7 +232,7 @@ export function PropertyCard(props: PropertyCardProps) {
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                       <span className="font-medium text-foreground text-sm">{rating}</span>
-                      <span className="text-sm text-muted-foreground">({reviews})</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">({reviews})</span>
                     </div>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ export function PropertyCard(props: PropertyCardProps) {
                 <div className="flex items-center justify-between pt-3">
                   <div>
                     <span className="font-bold text-2xl text-foreground">{price}</span>
-                    {status === "Rent" && <span className="text-base text-muted-foreground"> /month</span>}
+                    {status === "Rent" && <span className="text-base text-gray-500 dark:text-gray-400"> /month</span>}
                   </div>
                   <div className="flex gap-2">
                     <Badge className={`${getStatusColor(status)} text-xs`}>{status}</Badge>
@@ -324,14 +324,14 @@ export function PropertyCard(props: PropertyCardProps) {
             </h3>
             
             {/* Location */}
-            <div className="flex items-center gap-1 text-muted-foreground mb-2">
+            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300 mb-2">
               <MapPin className="w-3 h-3 flex-shrink-0" />
               <span className="text-xs sm:text-sm truncate">{location}</span>
             </div>
 
             {/* Property Details - More compact */}
             {(bedrooms || bathrooms || area) && (
-              <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 text-xs mb-2">
                 {bedrooms && <span className="flex items-center gap-1">{bedrooms}🛏️</span>}
                 {bathrooms && <span className="flex items-center gap-1">{bathrooms}🚿</span>}
                 {area && <span className="text-xs">{area}</span>}
@@ -343,10 +343,10 @@ export function PropertyCard(props: PropertyCardProps) {
               <div>
                 <div className="font-bold text-sm sm:text-base text-foreground">
                   {price}
-                  {status === "Rent" && <span className="text-xs text-muted-foreground font-normal"> /mo</span>}
+                  {status === "Rent" && <span className="text-xs text-gray-500 dark:text-gray-400 font-normal"> /mo</span>}
                 </div>
                 {type && (
-                  <Badge variant="outline" className="text-xs mt-1 bg-gray-50 dark:bg-gray-800 text-muted-foreground">
+                  <Badge variant="outline" className="text-xs mt-1 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700">
                     {type}
                   </Badge>
                 )}
@@ -355,7 +355,7 @@ export function PropertyCard(props: PropertyCardProps) {
               <div className="flex items-center gap-1 text-right">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                 <span className="font-medium text-foreground text-xs">{rating}</span>
-                <span className="text-xs text-muted-foreground">({reviews})</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">({reviews})</span>
               </div>
             </div>
           </div>

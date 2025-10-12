@@ -147,7 +147,9 @@ export function DataCacheProvider({ children }: { children: ReactNode }) {
 
   // Utility function to check if cache is valid
   const isCacheValid = useCallback(async (key: string, customExpiry?: number): Promise<boolean> => {
-    const item = cache[key];
+    // Get current cache state directly to avoid dependency issues
+    const currentCache = cache;
+    const item = currentCache[key];
     
     // Check memory cache first
     if (item) {
@@ -163,7 +165,7 @@ export function DataCacheProvider({ children }: { children: ReactNode }) {
     }
     
     return false;
-  }, [cache, loadFromStorage]);
+  }, [loadFromStorage]); // Remove cache from dependencies
 
   // Utility function to set cache with automatic cleanup and localStorage persistence
   const setCacheData = useCallback(async (key: string, data: any, expiry?: number) => {
@@ -239,7 +241,7 @@ export function DataCacheProvider({ children }: { children: ReactNode }) {
       setPropertiesLoading(false);
       setCacheLoading('properties', false);
     }
-  }, [cache, isCacheValid, withRetry, setCacheData, setCacheLoading]);
+  }, [isCacheValid, withRetry, setCacheData, setCacheLoading]); // Remove cache from dependencies
 
   // Fetch transactions with caching
   const fetchTransactions = useCallback(async (force = false): Promise<void> => {
@@ -279,7 +281,7 @@ export function DataCacheProvider({ children }: { children: ReactNode }) {
       setTransactionsLoading(false);
       setCacheLoading('transactions', false);
     }
-  }, [cache, isCacheValid, withRetry, setCacheData, setCacheLoading]);
+  }, [isCacheValid, withRetry, setCacheData, setCacheLoading]); // Remove cache from dependencies
 
   // Fetch conversations with caching
   const fetchConversations = useCallback(async (force = false): Promise<void> => {
@@ -306,7 +308,7 @@ export function DataCacheProvider({ children }: { children: ReactNode }) {
       setConversationsLoading(false);
       setCacheLoading('conversations', false);
     }
-  }, [cache, isCacheValid, withRetry, setCacheData, setCacheLoading]);
+  }, [isCacheValid, withRetry, setCacheData, setCacheLoading]); // Remove cache from dependencies
 
   // Fetch notifications with caching
   const fetchNotifications = useCallback(async (force = false): Promise<void> => {
@@ -333,7 +335,7 @@ export function DataCacheProvider({ children }: { children: ReactNode }) {
       setNotificationsLoading(false);
       setCacheLoading('notifications', false);
     }
-  }, [cache, isCacheValid, withRetry, setCacheData, setCacheLoading]);
+  }, [isCacheValid, withRetry, setCacheData, setCacheLoading]); // Remove cache from dependencies
 
 
   // Fetch unread message count

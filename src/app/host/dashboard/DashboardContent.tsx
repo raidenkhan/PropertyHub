@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
@@ -31,11 +31,14 @@ export default function HostDashboard() {
   
   const { 
     properties, 
+    allProperties,
     stats, 
-    loading: dashboardLoading, 
+    loading: dashboardLoading,
+    initialLoad,
     error: dashboardError, 
     refetch,
-    fetchPropertiesByStatus 
+    fetchPropertiesByStatus,
+    filterPropertiesByStatus 
   } = useHostDashboard();
   
   const { 
@@ -46,27 +49,29 @@ export default function HostDashboard() {
     loading: actionLoading 
   } = usePropertyActions();
 
-  const handleTabChange = useCallback(async (newTab: string) => {
+  const handleTabChange = useCallback((newTab: string) => {
     setActiveTab(newTab);
     
-    if (!user) return;
+    if (!user || !allProperties.length) return;
 
     const statusMap: Record<string, string> = {
       "listed": "LISTED",
       "pending": "PENDING_VERIFICATION", 
       "drafts": "DRAFT",
-      "rejected": "REJECTED",
+      "rejected": "SUSPENDED", // Note: Changed from REJECTED to SUSPENDED to match backend
       "sold": "SOLD",
-      "verified":"VERIFIED"
+      "verified": "VERIFIED"
     };
 
     const status = statusMap[newTab];
     if (status) {
-      await fetchPropertiesByStatus(status);
+      // Use local filtering instead of API calls for better performance
+      filterPropertiesByStatus(status);
     } else {
-      refetch();
+      // Show all properties for unknown tabs
+      filterPropertiesByStatus('');
     }
-  }, [user, fetchPropertiesByStatus, refetch]);
+  }, [user, allProperties.length, filterPropertiesByStatus]);
 
   useEffect(() => {
     if (searchParams.get('action') === 'list-new' && requiresPayoutSetup) {
@@ -82,34 +87,34 @@ export default function HostDashboard() {
   const getStatusColor = (status: Property["status"]) => {
     switch (status) {
       case "LISTED":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+        return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-200 dark:border-green-700";
       case "VERIFIED":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+        return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-700";
       case "PENDING_VERIFICATION":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+        return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700";
       case "DRAFT":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
+        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600";
       case "SUSPENDED":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+        return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-200 dark:border-red-700";
       case "SOLD":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
+        return "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-200 dark:border-purple-700";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
+        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600";
     }
   };
 
   const getTypeColor = (type: Property["type"]) => {
     switch (type) {
       case "APPARTMENT":
-        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200";
+        return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-700";
       case "COMMERCIAL":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+        return "bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-200 dark:border-indigo-700";
       case "LAND":
-        return "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200";
+        return "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/40 dark:text-violet-200 dark:border-violet-700";
       case "OFFICE":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+        return "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-200 dark:border-orange-700";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
+        return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600";
     }
   };
 
@@ -194,40 +199,22 @@ export default function HostDashboard() {
     return actions;
   };
 
-  // Helper function to get count for each tab
-  const getTabCounts = () => {
+  // Helper function to get count for each tab - use allProperties to show accurate counts
+  const getTabCounts = useMemo(() => {
     return {
-      listed: properties.filter(p => p.status === "LISTED").length,
-      verified: properties.filter(p => p.status === "VERIFIED").length,
-      pending: properties.filter(p => p.status === "PENDING_VERIFICATION").length,
-      drafts: properties.filter(p => p.status === "DRAFT").length,
-      rejected: properties.filter(p => p.status === "SUSPENDED").length,
-      sold: properties.filter(p => p.status === "SOLD").length,
+      listed: allProperties.filter(p => p.status === "LISTED").length,
+      verified: allProperties.filter(p => p.status === "VERIFIED").length,
+      pending: allProperties.filter(p => p.status === "PENDING_VERIFICATION").length,
+      drafts: allProperties.filter(p => p.status === "DRAFT").length,
+      rejected: allProperties.filter(p => p.status === "SUSPENDED").length,
+      sold: allProperties.filter(p => p.status === "SOLD").length,
     };
-  };
+  }, [allProperties]);
 
-  const tabCounts = getTabCounts();
+  // Properties are already filtered by the hook based on active tab
+  const filteredProperties = properties;
 
-  const filteredProperties = properties.filter((property) => {
-    switch (activeTab) {
-      case "listed":
-        return property.status === "LISTED";
-      case "verified":
-        return property.status==="VERIFIED";
-      case "pending":
-        return property.status === "PENDING_VERIFICATION";
-      case "drafts":
-        return property.status === "DRAFT";
-      case "rejected":
-        return property.status === "SUSPENDED";
-      case "sold":
-        return property.status === "SOLD";
-      default:
-        return true;
-    }
-  });
-
-  if (dashboardLoading) {
+  if (initialLoad && dashboardLoading) {
     return (
       <div className="min-h-screen bg-background dark:bg-gray-900 relative">
         <AnimatedBackground />
@@ -257,7 +244,7 @@ export default function HostDashboard() {
           <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-foreground dark:text-white mb-2">Failed to Load Dashboard</h2>
           <p className="text-muted-foreground dark:text-gray-300 mb-6">{dashboardError}</p>
-          <Button onClick={refetch} className="bg-primary hover:bg-primary/90">
+          <Button onClick={() => refetch()} className="bg-primary hover:bg-primary/90">
             Try Again
           </Button>
         </div>
@@ -289,18 +276,18 @@ export default function HostDashboard() {
         {requiresPayoutSetup && !showPayoutForm && (
           <div className="bg-yellow-50 border-b border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800/50">
             <div className="max-w-7xl mx-auto py-3 px-4 sm:px-6">
-              <div className="flex items-center justify-between flex-wrap">
-                <div className="w-0 flex-1 flex items-center">
+              <div className="flex flex-col sm:flex-row items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center w-full sm:w-auto">
                   <span className="flex p-2 rounded-lg bg-yellow-100 dark:bg-yellow-500/20">
                     <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-300" aria-hidden="true" />
                   </span>
-                  <p className="ml-3 font-medium text-yellow-800 dark:text-yellow-200">
+                  <p className="ml-3 font-medium text-yellow-800 dark:text-yellow-200 truncate">
                     <span className="md:hidden">Action Required!</span>
                     <span className="hidden md:inline">Action Required: Please set up your payout details before you can list a property.</span>
                   </p>
                 </div>
                 <div className="order-3 mt-2 flex-shrink-0 w-full sm:order-2 sm:mt-0 sm:w-auto">
-                  <Button onClick={() => setShowPayoutForm(true)} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                  <Button onClick={() => setShowPayoutForm(true)} size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white w-full sm:w-auto">
                     Setup Payouts
                   </Button>
                 </div>
@@ -309,7 +296,7 @@ export default function HostDashboard() {
           </div>
         )}
 
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -335,7 +322,7 @@ export default function HostDashboard() {
               </Button>
             </div>
           </div>
-        </motion.div>
+        </motion.div> */}
 
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
           {/* Stats Cards - 2x2 grid on all screens */}
@@ -457,76 +444,76 @@ export default function HostDashboard() {
           </Card>
 
           {/* Property Tabs */}
-          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm mb-3">
             <CardHeader className="border-b border-border pb-0">
               <div className="flex flex-col gap-4">
                 <CardTitle className="text-xl font-bold text-foreground dark:text-white">Your Properties</CardTitle>
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                  <TabsList className="grid w-full grid-cols-6 bg-transparent h-auto p-1 overflow-x-auto">
+                  <TabsList className="grid w-full grid-cols-6 bg-gray-100 dark:bg-gray-800 h-auto p-1 overflow-x-auto rounded-lg">
                     {/* Help tooltip for tabs */}
-                    {(tabCounts.drafts > 0 || tabCounts.pending > 0 || tabCounts.rejected > 0) && activeTab === "listed" && (
+                    {(getTabCounts.drafts > 0 || getTabCounts.pending > 0 || getTabCounts.rejected > 0) && activeTab === "listed" && (
                       <div className="absolute -top-8 left-0 right-0 text-center">
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-200 dark:border-blue-700 animate-bounce">
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-200 dark:border-blue-700 animate-bounce rounded-md">
                           💡 You have items in other tabs!
                         </Badge>
                       </div>
                     )}
-                    <TabsTrigger value="listed" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5 min-w-[60px] relative">
+                    <TabsTrigger value="listed" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1.5 min-w-[60px] relative rounded-md transition-all duration-200">
                       <div className="flex items-center gap-1">
                         <span>Listed</span>
-                        {tabCounts.listed > 0 && (
-                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            {tabCounts.listed}
+                        {getTabCounts.listed > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-sm">
+                            {getTabCounts.listed}
                           </Badge>
                         )}
                       </div>
                     </TabsTrigger>
-                    <TabsTrigger value="verified" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5 min-w-[60px] relative">
+                    <TabsTrigger value="verified" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1.5 min-w-[60px] relative rounded-md transition-all duration-200">
                       <div className="flex items-center gap-1">
                         <span>Verified</span>
-                        {tabCounts.verified > 0 && (
-                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                            {tabCounts.verified}
+                        {getTabCounts.verified > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-sm">
+                            {getTabCounts.verified}
                           </Badge>
                         )}
                       </div>
                     </TabsTrigger>
-                    <TabsTrigger value="pending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5 min-w-[60px] relative">
+                    <TabsTrigger value="pending" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1.5 min-w-[60px] relative rounded-md transition-all duration-200">
                       <div className="flex items-center gap-1">
                         <span>Pending</span>
-                        {tabCounts.pending > 0 && (
-                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                            {tabCounts.pending}
+                        {getTabCounts.pending > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded-sm">
+                            {getTabCounts.pending}
                           </Badge>
                         )}
                       </div>
                     </TabsTrigger>
-                    <TabsTrigger value="drafts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5 min-w-[60px] relative">
+                    <TabsTrigger value="drafts" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1.5 min-w-[60px] relative rounded-md transition-all duration-200">
                       <div className="flex items-center gap-1">
                         <span>Drafts</span>
-                        {tabCounts.drafts > 0 && (
-                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 animate-pulse">
-                            {tabCounts.drafts}
+                        {getTabCounts.drafts > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 animate-pulse rounded-sm">
+                            {getTabCounts.drafts}
                           </Badge>
                         )}
                       </div>
                     </TabsTrigger>
-                    <TabsTrigger value="rejected" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5 min-w-[60px] relative">
+                    <TabsTrigger value="rejected" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1.5 min-w-[60px] relative rounded-md transition-all duration-200">
                       <div className="flex items-center gap-1">
                         <span>Rejected</span>
-                        {tabCounts.rejected > 0 && (
-                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                            {tabCounts.rejected}
+                        {getTabCounts.rejected > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded-sm">
+                            {getTabCounts.rejected}
                           </Badge>
                         )}
                       </div>
                     </TabsTrigger>
-                    <TabsTrigger value="sold" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs px-2 py-1.5 min-w-[60px] relative">
+                    <TabsTrigger value="sold" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1.5 min-w-[60px] relative rounded-md transition-all duration-200">
                       <div className="flex items-center gap-1">
                         <span>Sold</span>
-                        {tabCounts.sold > 0 && (
-                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                            {tabCounts.sold}
+                        {getTabCounts.sold > 0 && (
+                          <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-sm">
+                            {getTabCounts.sold}
                           </Badge>
                         )}
                       </div>
@@ -590,13 +577,13 @@ export default function HostDashboard() {
                                         {property.type}
                                       </Badge>
                                     </div>
-                                    <div className="flex items-center gap-1 text-muted-foreground mb-2">
+                                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300 mb-2">
                                       <MapPin className="w-3 h-3" />
                                       <span className="text-xs line-clamp-1">{property.location}</span>
                                     </div>
                                     <div className="flex justify-between items-center mb-2">
                                       <span className="font-bold text-sm">₵{property.price.toLocaleString()}</span>
-                                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                      <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
                                         <div className="flex items-center gap-1">
                                           <Eye className="h-3 w-3" />
                                           <span>0</span>
@@ -699,10 +686,10 @@ export default function HostDashboard() {
                                 <h3 className="font-semibold text-lg text-foreground dark:text-white mb-2 line-clamp-2">
                                   {property.title}
                                 </h3>
-                                <p className="text-sm text-muted-foreground dark:text-gray-300 mb-3">{property.location}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{property.location}</p>
                                 <div className="flex items-center justify-between mb-4">
                                   <span className="text-xl font-bold text-primary">₵{property.price.toLocaleString()}</span>
-                                  <div className="flex items-center gap-4 text-xs text-muted-foreground dark:text-gray-400">
+                                  <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-300">
                                     <div className="flex items-center gap-1">
                                       <Eye className="h-3 w-3" />
                                       <span>0</span>
@@ -731,7 +718,7 @@ export default function HostDashboard() {
                                               key={actionIndex}
                                               variant="ghost"
                                               size="icon"
-                                              className="text-muted-foreground hover:text-red-500"
+                                              className="text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400"
                                               onClick={() => handleDeleteProperty(property.id)}
                                               disabled={actionLoading[property.id.toString()]}
                                             >

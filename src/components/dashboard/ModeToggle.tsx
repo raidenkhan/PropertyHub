@@ -75,9 +75,9 @@ export function ModeToggle() {
       </div>
 
       <Tabs value={value} onValueChange={onChange} className="w-full max-w-md">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="travel">Buying</TabsTrigger>
-          <TabsTrigger value="hosting">Hosting</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 rounded-sm ">
+          <TabsTrigger className="rounded-sm" value="travel">Buying</TabsTrigger>
+          <TabsTrigger className="rounded-sm" value="hosting">Hosting</TabsTrigger>
         </TabsList>
       </Tabs>
 

@@ -196,7 +196,7 @@ export default function UserDashboard() {
         <ModeToggle />
 
         {/* Hero Banner */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -215,14 +215,14 @@ export default function UserDashboard() {
               </div>
               <Button
                 size="default"
-                className="bg-white text-blue-600 hover:bg-blue-50 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                className="bg-white text-blue-600 hover:bg-blue-50 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-md"
                 onClick={() => router.push("/")}
               >
                 <Home className="mr-2 h-4 w-4" /> Browse Properties
               </Button>
             </div>
           </div>
-        </motion.div>
+        </motion.div> */}
 
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
           {/* Stats Cards - 2x2 grid on mobile */}
@@ -232,11 +232,11 @@ export default function UserDashboard() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8"
           >
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
               <CardContent className="p-3 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs md:text-sm font-medium text-muted-foreground dark:text-gray-300">Listings</p>
+                    <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-200">Listings</p>
                     <p className="text-xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.totalListings}</p>
                   </div>
                   <Home className="h-5 w-5 md:h-8 md:w-8 text-blue-500 dark:text-blue-400" />
@@ -244,38 +244,38 @@ export default function UserDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-700 border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-700 border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
               <CardContent className="p-3 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs md:text-sm font-medium text-muted-foreground dark:text-gray-300">Purchases</p>
+                    <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-200">Purchases</p>
                     <p className="text-xl md:text-3xl font-bold text-green-600 dark:text-green-400">{stats.activePurchases}</p>
                   </div>
-                  <ShoppingBag className="h-5 w-5 md:h-8 md:w-8 text-green-500 dark:text-green-400" />
+                  <ShoppingBag className="h-5 w-5 md:h-8 md:w-8 text-green-600 dark:text-green-400" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-gray-800 dark:to-gray-700 border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-gray-800 dark:to-gray-700 border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
               <CardContent className="p-3 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs md:text-sm font-medium text-muted-foreground dark:text-gray-300">Messages</p>
+                    <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-200">Messages</p>
                     <p className="text-xl md:text-3xl font-bold text-orange-600 dark:text-orange-400">{stats.unreadMessages}</p>
                   </div>
-                  <MessageSquare className="h-5 w-5 md:h-8 md:w-8 text-orange-500 dark:text-orange-400" />
+                  <MessageSquare className="h-5 w-5 md:h-8 md:w-8 text-orange-600 dark:text-orange-400" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-700 border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-700 border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
               <CardContent className="p-3 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs md:text-sm font-medium text-muted-foreground dark:text-gray-300">Alerts</p>
+                    <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-200">Alerts</p>
                     <p className="text-xl md:text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.unreadNotifications}</p>
                   </div>
-                  <Bell className="h-5 w-5 md:h-8 md:w-8 text-purple-500 dark:text-purple-400" />
+                  <Bell className="h-5 w-5 md:h-8 md:w-8 text-purple-600 dark:text-purple-400" />
                 </div>
               </CardContent>
             </Card>
@@ -288,65 +288,65 @@ export default function UserDashboard() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8"
           >
-            <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm hover:shadow-xl transition-shadow cursor-pointer" onClick={() => router.push("/host/properties/new")}>
+            <Card className="border-0 shadow-lg bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm hover:shadow-xl transition-shadow cursor-pointer rounded-lg" onClick={() => router.push("/host/properties/new")}>
               <CardContent className="p-4 md:p-6 text-center">
-                <div className="h-12 w-12 md:h-16 md:w-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <div className="h-12 w-12 md:h-16 md:w-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-3 md:mb-4">
                   <Plus className="h-5 w-5 md:h-8 md:w-8 text-white" />
                 </div>
                 <h3 className="text-sm md:text-lg font-semibold mb-1 md:mb-2">List Property</h3>
-                <p className="text-xs md:text-sm text-muted-foreground hidden md:block">Add property for sale</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 hidden md:block">Add property for sale</p>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm hover:shadow-xl transition-shadow cursor-pointer" onClick={() => router.push("/")}>
+            <Card className="border-0 shadow-lg bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm hover:shadow-xl transition-shadow cursor-pointer rounded-lg" onClick={() => router.push("/")}>
               <CardContent className="p-4 md:p-6 text-center">
-                <div className="h-12 w-12 md:h-16 md:w-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <div className="h-12 w-12 md:h-16 md:w-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center mx-auto mb-3 md:mb-4">
                   <Home className="h-5 w-5 md:h-8 md:w-8 text-white" />
                 </div>
                 <h3 className="text-sm md:text-lg font-semibold mb-1 md:mb-2">Browse</h3>
-                <p className="text-xs md:text-sm text-muted-foreground hidden md:block">Find properties</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 hidden md:block">Find properties</p>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm hover:shadow-xl transition-shadow cursor-pointer" onClick={() => router.push("/messages")}>
+            <Card className="border-0 shadow-lg bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm hover:shadow-xl transition-shadow cursor-pointer rounded-lg" onClick={() => router.push("/messages")}>
               <CardContent className="p-4 md:p-6 text-center">
-                <div className="h-12 w-12 md:h-16 md:w-16 bg-gradient-to-br from-orange-500 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <div className="h-12 w-12 md:h-16 md:w-16 bg-gradient-to-br from-orange-500 to-yellow-600 rounded-lg flex items-center justify-center mx-auto mb-3 md:mb-4">
                   <MessageSquare className="h-5 w-5 md:h-8 md:w-8 text-white" />
                 </div>
                 <h3 className="text-sm md:text-lg font-semibold mb-1 md:mb-2">Messages</h3>
-                <p className="text-xs md:text-sm text-muted-foreground hidden md:block">Chat with users</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 hidden md:block">Chat with users</p>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm hover:shadow-xl transition-shadow cursor-pointer" onClick={() => router.push("/payouts")}>
+            <Card className="border-0 shadow-lg bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm hover:shadow-xl transition-shadow cursor-pointer rounded-lg" onClick={() => router.push("/payouts")}>
               <CardContent className="p-4 md:p-6 text-center">
-                <div className="h-12 w-12 md:h-16 md:w-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <div className="h-12 w-12 md:h-16 md:w-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center mx-auto mb-3 md:mb-4">
                   <DollarSign className="h-5 w-5 md:h-8 md:w-8 text-white" />
                 </div>
                 <h3 className="text-sm md:text-lg font-semibold mb-1 md:mb-2">Payouts</h3>
-                <p className="text-xs md:text-sm text-muted-foreground hidden md:block">Track earnings</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 hidden md:block">Track earnings</p>
               </CardContent>
             </Card>
           </motion.div>
 
           {/* Tabs */}
-          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-lg">
             <CardHeader className="border-b border-border pb-0">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-5 bg-transparent h-auto p-1">
-                  <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs md:text-sm px-2 py-2">
+                <TabsList className="grid w-full grid-cols-5 bg-gray-100 dark:bg-gray-800 h-auto p-1 rounded-lg">
+                  <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs md:text-sm px-2 py-2 rounded-md transition-all duration-200">
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="properties" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs md:text-sm px-2 py-2">
+                  <TabsTrigger value="properties" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs md:text-sm px-2 py-2 rounded-md transition-all duration-200">
                     Properties
                   </TabsTrigger>
-                  <TabsTrigger value="purchases" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs md:text-sm px-2 py-2">
+                  <TabsTrigger value="purchases" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs md:text-sm px-2 py-2 rounded-md transition-all duration-200">
                     Purchases
                   </TabsTrigger>
-                  <TabsTrigger value="messages" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs md:text-sm px-2 py-2">
+                  <TabsTrigger value="messages" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs md:text-sm px-2 py-2 rounded-md transition-all duration-200">
                     Messages
                   </TabsTrigger>
-                  <TabsTrigger value="notifications" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs md:text-sm px-2 py-2">
+                  <TabsTrigger value="notifications" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs md:text-sm px-2 py-2 rounded-md transition-all duration-200">
                     Alerts
                   </TabsTrigger>
                 </TabsList>
@@ -381,10 +381,10 @@ export default function UserDashboard() {
   <div className="space-y-4 md:space-y-6">
     {transactions.length === 0 ? (
       <div className="text-center py-8 md:py-12">
-        <ShoppingBag className="mx-auto h-12 w-12 md:h-16 md:w-16 text-muted-foreground dark:text-gray-400 mb-4" />
+        <ShoppingBag className="mx-auto h-12 w-12 md:h-16 md:w-16 text-gray-500 dark:text-gray-400 mb-4" />
         <h3 className="text-lg md:text-xl font-semibold text-foreground dark:text-white mb-2">No Purchases Yet</h3>
-        <p className="text-sm md:text-base text-muted-foreground dark:text-gray-300 mb-6">Browse properties and make your first purchase!</p>
-        <Button onClick={() => router.push("/")} className="bg-primary hover:bg-primary/90">
+        <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-6">Browse properties and make your first purchase!</p>
+        <Button onClick={() => router.push("/")} className="bg-primary hover:bg-primary/90 rounded-md">
           <Home className="mr-2 h-4 w-4" /> Browse Properties
         </Button>
       </div>
@@ -397,7 +397,7 @@ export default function UserDashboard() {
               <CardContent className="p-3">
                 <div className="space-y-2">
                   <h3 className="font-semibold text-sm">{transaction.property.title}</h3>
-                  <p className="text-xs text-muted-foreground">{transaction.property.location}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">{transaction.property.location}</p>
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-sm">₦{transaction.amount.toLocaleString()}</span>
                     <Badge className={
@@ -409,7 +409,7 @@ export default function UserDashboard() {
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">{new Date(transaction.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(transaction.createdAt).toLocaleDateString()}</span>
                     <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={() => router.push(`/transactions/${transaction.id}`)}>
                       Details
                     </Button>
@@ -469,9 +469,9 @@ export default function UserDashboard() {
                     <div className="space-y-4 md:space-y-6">
                       {conversations.length === 0 ? (
                         <div className="text-center py-8 md:py-12">
-                          <MessageSquare className="mx-auto h-12 w-12 md:h-16 md:w-16 text-muted-foreground dark:text-gray-400 mb-4" />
+                          <MessageSquare className="mx-auto h-12 w-12 md:h-16 md:w-16 text-gray-500 dark:text-gray-400 mb-4" />
                           <h3 className="text-lg md:text-xl font-semibold text-foreground dark:text-white mb-2">No Conversations Yet</h3>
-                          <p className="text-sm md:text-base text-muted-foreground dark:text-gray-300">You &apos ll see conversations with buyers or sellers here.</p>
+                          <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">You &apos ll see conversations with buyers or sellers here.</p>
                           <Button onClick={() => router.push("/messages")} className="mt-4">
                             <MessageSquare className="mr-2 h-4 w-4" /> Go to Messages
                           </Button>
@@ -495,8 +495,8 @@ export default function UserDashboard() {
                                       </Avatar>
                                       <h3 className="font-semibold text-sm md:text-base">{conversation.name}</h3>
                                     </div>
-                                    <p className="text-xs md:text-sm text-muted-foreground">{conversation.email}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Click to view conversation</p>
+                                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">{conversation.email}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Click to view conversation</p>
                                   </div>
                                   <Button variant="ghost" size="sm" className="text-xs md:text-sm">
                                     <MessageSquare className="h-4 w-4" />
@@ -524,9 +524,9 @@ export default function UserDashboard() {
                         </div>
                       ) : notifications.length === 0 ? (
                         <div className="text-center py-8 md:py-12">
-                          <Bell className="mx-auto h-12 w-12 md:h-16 md:w-16 text-muted-foreground dark:text-gray-400 mb-4" />
+                          <Bell className="mx-auto h-12 w-12 md:h-16 md:w-16 text-gray-500 dark:text-gray-400 mb-4" />
                           <h3 className="text-lg md:text-xl font-semibold text-foreground dark:text-white mb-2">No Notifications</h3>
-                          <p className="text-sm md:text-base text-muted-foreground dark:text-gray-300">You &aposll be notified about important updates here.</p>
+                          <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">You &aposll be notified about important updates here.</p>
                         </div>
                       ) : (
                         <div className="space-y-3 md:space-y-4">
@@ -587,7 +587,7 @@ export default function UserDashboard() {
                                         <h3 className={`font-semibold text-sm md:text-base ${
                                           !notification.read 
                                             ? 'text-foreground dark:text-white' 
-                                            : 'text-muted-foreground'
+                                            : 'text-gray-600 dark:text-gray-300'
                                         }`}>
                                           {notification.title}
                                         </h3>
@@ -604,18 +604,18 @@ export default function UserDashboard() {
                                         </div>
                                       </div>
                                       
-                                      <p className="text-xs md:text-sm text-muted-foreground mb-2 line-clamp-2">
+                                      <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
                                         {notification.message}
                                       </p>
                                       
                                       <div className="flex items-center justify-between">
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
                                           {new Date(notification.createdAt).toLocaleDateString()}
                                         </p>
                                         
                                         {/* Related item info */}
                                         {(notification.property || notification.transaction || notification.dispute) && (
-                                          <div className="text-xs text-muted-foreground">
+                                          <div className="text-xs text-gray-500 dark:text-gray-400">
                                             {notification.property && `Property: ${notification.property.title}`}
                                             {notification.transaction && `Transaction: ₦${notification.transaction.amount.toLocaleString()}`}
                                             {notification.dispute && `Dispute: ${notification.dispute.title}`}

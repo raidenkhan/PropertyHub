@@ -1,5 +1,5 @@
 // hooks/useHostDashboard.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { hostDashboardService,Property } from '@/lib/api/hostDashBoardService';
 import { toast } from '@/hooks/use-toast';
 
@@ -49,39 +49,33 @@ const CACHE_KEY = 'hostDashboardCache_v1';
 
 export const useHostDashboard = () => {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalProperties: 0,
-    listedProperties: 0,
-    soldProperties: 0,
-    pendingVerification: 0,
-    draftProperties: 0,
-    rejectedProperties: 0,
-    totalInquiries: 0,
-    unreadMessages: 0,
-    totalRevenue: 0,
-    pendingPayouts: 0,
-  });
+  const [allProperties, setAllProperties] = useState<Property[]>([]); // Store all properties for filtering
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
 
-  const calculateStats = useCallback((properties: Property[]): DashboardStats => {
+  // Memoize stats calculation to prevent unnecessary recalculations
+  const stats = useMemo((): DashboardStats => {
     return {
-      totalProperties: properties.length,
-      listedProperties: properties.filter(p => p.status === "LISTED" || p.status === "VERIFIED").length,
-      soldProperties: properties.filter(p => p.status === "SOLD").length,
-      pendingVerification: properties.filter(p => p.status === "PENDING_VERIFICATION").length,
-      draftProperties: properties.filter(p => p.status === "DRAFT").length,
-      rejectedProperties: properties.filter(p => p.status === "SUSPENDED").length,
+      totalProperties: allProperties.length,
+      listedProperties: allProperties.filter(p => p.status === "LISTED" || p.status === "VERIFIED").length,
+      soldProperties: allProperties.filter(p => p.status === "SOLD").length,
+      pendingVerification: allProperties.filter(p => p.status === "PENDING_VERIFICATION").length,
+      draftProperties: allProperties.filter(p => p.status === "DRAFT").length,
+      rejectedProperties: allProperties.filter(p => p.status === "SUSPENDED").length,
       totalInquiries: 0, // This would come from a separate inquiry count API
       unreadMessages: 0, // This would come from messages API
       totalRevenue: 0, // This would come from transactions API
       pendingPayouts: 0, // This would come from transactions API
     };
-  }, []);
+  }, [allProperties]);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       setError(null);
 
       // Fetch all properties using your existing service
@@ -90,50 +84,81 @@ export const useHostDashboard = () => {
       // Handle different response structures
       const propertiesData = response.data || response.data || response;
       
-      setProperties(propertiesData);
-      const computed = calculateStats(propertiesData);
-      setStats(computed);
+      // Update both all properties and current filtered properties
+      setAllProperties(propertiesData);
+      setProperties(propertiesData); // Default to show all initially
+      
       // Update cache
       if (typeof window !== 'undefined') {
         try {
           window.sessionStorage.setItem(
             CACHE_KEY,
-            JSON.stringify({ properties: propertiesData, stats: computed, ts: Date.now() })
+            JSON.stringify({ properties: propertiesData, ts: Date.now() })
           );
         } catch {}
       }
 
+      hasFetchedRef.current = true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load dashboard data';
       setError(errorMessage);
       console.error('Dashboard fetch error:', err);
       
-      toast({
-        title: "Failed to load dashboard",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // Only show toast for non-silent requests
+      if (!silent) {
+        toast({
+          title: "Failed to load dashboard",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
-  }, [calculateStats]);
+  }, []); // Removed calculateStats dependency to prevent infinite re-renders
 
-  const fetchPropertiesByStatus = useCallback(async (status: string) => {
+  // Filter properties by status locally instead of making new API calls
+  const filterPropertiesByStatus = useCallback((status: string) => {
+    const filtered = allProperties.filter(property => {
+      switch (status) {
+        case "LISTED":
+          return property.status === "LISTED";
+        case "VERIFIED":
+          return property.status === "VERIFIED";
+        case "PENDING_VERIFICATION":
+          return property.status === "PENDING_VERIFICATION";
+        case "DRAFT":
+          return property.status === "DRAFT";
+        case "REJECTED":
+        case "SUSPENDED":
+          return property.status === "SUSPENDED";
+        case "SOLD":
+          return property.status === "SOLD";
+        default:
+          return true;
+      }
+    });
+    setProperties(filtered);
+    return filtered;
+  }, [allProperties]);
+
+  // Keep the API-based fetch for backward compatibility if needed
+  const fetchPropertiesByStatus = useCallback(async (status: string, force = false) => {
+    // If we have data and not forcing, filter locally instead
+    if (hasFetchedRef.current && !force) {
+      return filterPropertiesByStatus(status);
+    }
+    
     try {
       setLoading(true);
       setError(null);
       const response = await hostDashboardService.getMyProperties({ status });
       const propertiesData = response.data || response;
       setProperties(propertiesData);
-      const computed = calculateStats(propertiesData);
-      setStats(computed);
-      if (typeof window !== 'undefined') {
-        try {
-          window.sessionStorage.setItem(
-            CACHE_KEY,
-            JSON.stringify({ properties: propertiesData, stats: computed, ts: Date.now() })
-          );
-        } catch {}
+      // Update all properties if this is a more comprehensive dataset
+      if (propertiesData.length > allProperties.length) {
+        setAllProperties(propertiesData);
       }
       return propertiesData;
     } catch (error) {
@@ -144,40 +169,65 @@ export const useHostDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [calculateStats]);
+  }, [allProperties, filterPropertiesByStatus]);
 
   useEffect(() => {
-    // Hydrate from cache for instant UI on revisit
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = window.sessionStorage.getItem(CACHE_KEY);
-        if (raw) {
-          const cached = JSON.parse(raw) as { properties: Property[]; stats: DashboardStats; ts: number };
-          if (cached?.properties && cached?.stats) {
-            setProperties(cached.properties);
-            setStats(cached.stats);
-            // Keep loading true so the page shows a skeleton until the fresh fetch completes
+    let isMounted = true;
+    
+    const loadData = async () => {
+      // Hydrate from cache for instant UI on revisit
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = window.sessionStorage.getItem(CACHE_KEY);
+          if (raw && isMounted) {
+            const cached = JSON.parse(raw) as { properties: Property[]; ts: number };
+            if (cached?.properties) {
+              setAllProperties(cached.properties);
+              setProperties(cached.properties);
+              setInitialLoad(false); // Don't show skeleton if we have cached data
+              setLoading(false);
+              
+              // Check if cache is fresh (less than 5 minutes old)
+              const isRecentCache = Date.now() - (cached.ts || 0) < 5 * 60 * 1000;
+              if (isRecentCache) {
+                hasFetchedRef.current = true;
+                return; // Skip background refresh for fresh cache
+              }
+            }
           }
+        } catch (e) {
+          // ignore cache errors
         }
-      } catch (e) {
-        // ignore cache errors
       }
-    }
-    // Always refresh in background
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+      
+      // Fetch fresh data if no cache or cache is stale
+      if (isMounted && !hasFetchedRef.current) {
+        await fetchDashboardData();
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array prevents re-runs
 
-  const refetch = useCallback(() => {
+  const refetch = useCallback((force = false) => {
+    hasFetchedRef.current = false; // Reset fetch flag to force refresh
     fetchDashboardData();
   }, [fetchDashboardData]);
 
   return {
     properties,
+    allProperties,
     stats,
-    loading,
+    loading: initialLoad ? loading : false, // Don't show loading for subsequent updates
+    initialLoad,
     error,
     refetch,
     fetchPropertiesByStatus,
+    filterPropertiesByStatus, // Add the new filter function
   };
 };
 

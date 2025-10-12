@@ -1,6 +1,7 @@
 // src/lib/api/managerService.ts
 import { authService, getAuthHeader } from '../auth/authservice';
 import { BACKEND_BASE_URL } from '../constants/api';
+import { toast } from '@/hooks/use-toast';  // Add this import
 
 const API_URL = BACKEND_BASE_URL
 
@@ -24,30 +25,56 @@ export const managerService = {
   },
 
   approveProperty: async (propertyId: number, notes?: string): Promise<ApiResponse<Property>> => {
-    const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/approve`, {
-      method: 'PATCH',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-    });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || 'Failed to approve property');
+    try {
+      const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/approve`, {
+        method: 'PATCH',
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to approve property');
+      }
+      const data = await response.json();
+      toast({
+        title: "Property Approved",
+        description: "The property has been successfully approved.",
+      });
+      return { data };
+    } catch (error: any) {
+      toast({
+        title: "Approval Failed",
+        description: error.message || "Failed to approve property",
+        variant: "destructive",
+      });
+      throw error;
     }
-    const data = await response.json();
-    return { data };
   },
 
   rejectProperty: async (propertyId: number, reason: string): Promise<ApiResponse<Property>> => {
-    const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/reject`, {
-      method: 'PATCH',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason }),
-    });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || 'Failed to reject property');
+    try {
+      const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/reject`, {
+        method: 'PATCH',
+        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to reject property');
+      }
+      const data = await response.json();
+      toast({
+        title: "Property Rejected",
+        description: "The property has been rejected successfully.",
+      });
+      return { data };
+    } catch (error: any) {
+      toast({
+        title: "Rejection Failed",
+        description: error.message || "Failed to reject property",
+        variant: "destructive",
+      });
+      throw error;
     }
-    const data = await response.json();
-    return { data };
   },
 
   suspendProperty: async (propertyId: number, reason: string): Promise<ApiResponse<Property>> => {
