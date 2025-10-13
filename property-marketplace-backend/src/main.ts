@@ -17,7 +17,8 @@ async function bootstrap() {
       process.env.FRONTEND_URL,
     ].filter(Boolean),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allowed HTTP methods
-    credentials: true, // Allow sending of cookies and authentication tokens
+   credentials: true,
+  
   });
   app.useWebSocketAdapter(new IoAdapter(app));
   await app.listen(process.env.PORT ?? 3000);

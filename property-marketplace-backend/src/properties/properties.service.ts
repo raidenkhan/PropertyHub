@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePropertyDto } from './dto/create-property.dto';
 import { Prisma } from '@prisma/client';
 
+
 @Injectable()
 export class PropertyService {
   constructor(private prisma: PrismaService) {}
@@ -193,7 +194,7 @@ console.log('Returning property:', property);
       where: { id },
       data: dto
     });
-
+     
     return updatedProperty;
   }
 
@@ -347,6 +348,7 @@ console.log('Returning property:', property);
     await this.prisma.property.delete({
       where: { id: propertyId }
     });
+
   }
 
   /**

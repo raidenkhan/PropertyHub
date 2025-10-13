@@ -38,7 +38,7 @@
     "multer": "^2.0.2",
     "paystack-sdk": "^3.0.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
+    "rxjs": "^7.8.2",
     "sanitize-html": "^2.17.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",

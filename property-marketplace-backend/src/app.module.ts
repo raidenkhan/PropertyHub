@@ -17,6 +17,7 @@ import { WsJwtGuard } from './auth/guards/ws-jwt.guard';
 import { NotificationsModule } from './notifications/notifications.module';
 
 
+
 @Module({
   imports: [AuthModule, UsersModule, PrismaModule, PropertiesModule,TransactionsModule,MessagesModule,ManagerModule,PaymentModule,AdminModule,NotificationsModule
     // ,MulterModule.register({

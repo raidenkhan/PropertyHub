@@ -58,6 +58,12 @@ model User {
   paystackSubaccountId  String?  
 
   likedProperties       PropertyLike[]      @relation("UserLikes")
+
+    // New offer relations
+  buyerOffers     Offer[] @relation("BuyerOffers")
+  sellerOffers    Offer[] @relation("SellerOffers")
+  offerCounters   OfferCounter[]
+  offerMessages   OfferMessage[]
 }
 
 model Notification {
@@ -155,6 +161,9 @@ model Property {
   likesCount    Int             @default(0)
   likes         PropertyLike[]  @relation("PropertyLikes")
 
+    //new Offers Relations
+   offers      Offer[]
+
   @@index([propertyId])
   @@index([currentOwnerId])
   @@index([status])
@@ -237,6 +246,9 @@ model Transaction {
   //notifications
   notifications         Notification[]      @relation("NotificationTransaction")
 
+  offerId     Int?
+  offer       Offer? @relation(fields: [offerId], references: [id])
+
   @@index([transactionId])
   @@index([buyerId])
   @@index([sellerId])
@@ -279,6 +291,74 @@ model Dispute {
   @@index([status])
 }
 
+model Offer {
+  id          Int      @id @default(autoincrement())
+  offerId     String   @unique @default(cuid()) // Public facing ID
+  
+  // Core offer details
+  propertyId  String
+  buyerId     Int
+  sellerId    Int
+  amount      Float
+  message     String?  @db.Text
+  
+  // Offer lifecycle
+  status      OfferStatus @default(PENDING)
+  expiresAt   DateTime?
+  respondedAt DateTime?
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  property    Property @relation(fields: [propertyId], references: [propertyId], onDelete: Cascade)
+  buyer       User     @relation("BuyerOffers", fields: [buyerId], references: [id])
+  seller      User     @relation("SellerOffers", fields: [sellerId], references: [id])
+  
+  // Related entities
+  counterOffers OfferCounter[]
+  transactions  Transaction[] // Links to payment after acceptance
+  messages      OfferMessage[]
+  
+  @@map("offers")
+}
+
+model OfferCounter {
+  id          Int      @id @default(autoincrement())
+  
+  offerId     Int
+  fromUserId  Int      // Who made the counter (buyer or seller)
+  amount      Float
+  message     String?  @db.Text
+  
+  status      CounterStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  offer       Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  fromUser    User  @relation(fields: [fromUserId], references: [id])
+  
+  @@map("offer_counters")
+}
+model OfferMessage {
+  id          Int      @id @default(autoincrement())
+  
+  offerId     Int
+  fromUserId  Int
+  content     String   @db.Text
+  messageType OfferMessageType @default(GENERAL)
+  
+  createdAt   DateTime @default(now())
+  isRead      Boolean  @default(false)
+  
+  // Relations
+  offer       Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  fromUser    User  @relation(fields: [fromUserId], references: [id])
+  
+  @@map("offer_messages")
+}
 model Message {
   id         Int      @id @default(autoincrement())
   content    String
@@ -347,7 +427,27 @@ enum DisputePriority {
   HIGH
   CRITICAL
 }
+enum OfferStatus {
+  PENDING       // Waiting for seller response
+  ACCEPTED      // Seller accepted, ready for payment
+  REJECTED      // Seller rejected
+  COUNTERED     // Seller made counter-offer
+  EXPIRED       // Offer expired
+  WITHDRAWN     // Buyer withdrew offer
+  COMPLETED     // Payment completed
+}
+enum CounterStatus {
+  PENDING       // Waiting for response
+  ACCEPTED      // Counter-offer accepted
+  REJECTED      // Counter-offer rejected
+  SUPERSEDED    // Replaced by newer counter
+}
 
+enum OfferMessageType {
+  GENERAL       // Regular message
+  SYSTEM        // System generated (status changes, etc.)
+  COUNTER_OFFER // Counter offer message
+}
 enum NotificationType {
   PROPERTY_APPROVED
   PROPERTY_REJECTED

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PropertyService } from './properties.service';
 import { PropertiesController } from './properties.controller';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
