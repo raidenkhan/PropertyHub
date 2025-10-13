@@ -15,11 +15,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { WsJwtGuard } from './auth/guards/ws-jwt.guard';
 import { NotificationsModule } from './notifications/notifications.module';
+import { OffersModule } from './offer/offer.module';
 
 
 
 @Module({
-  imports: [AuthModule, UsersModule, PrismaModule, PropertiesModule,TransactionsModule,MessagesModule,ManagerModule,PaymentModule,AdminModule,NotificationsModule
+  imports: [AuthModule, UsersModule, PrismaModule, PropertiesModule,TransactionsModule,MessagesModule,ManagerModule,PaymentModule,AdminModule,NotificationsModule,OffersModule
     // ,MulterModule.register({
     //   dest:'./uploads'
     // })
