@@ -9,9 +9,69 @@ export class TransactionService {
     private propertyService: PropertyService
   ) {}
 
-  async initiateTransaction(buyerId: number, propertyId: number, offerAmount: number) {
+  async initiateFromOffer(buyerId: number, offerId: string) {
+    // Get the offer details
+    const offer = await this.prisma.offer.findUnique({
+      where: { offerId },
+      include: {
+        property: true,
+        buyer: true,
+        seller: true
+      }
+    });
+  
+    if (!offer) {
+      throw new NotFoundException('Offer not found');
+    }
+  
+    // Validate offer status
+    if (offer.status !== 'ACCEPTED') {
+      throw new BadRequestException('Offer must be accepted to initiate payment');
+    }
+  
+    // Validate buyer
+    if (offer.buyerId !== buyerId) {
+      throw new ForbiddenException('You are not authorized to pay for this offer');
+    }
+  
+    // Check if transaction already exists
+    const existingTransaction = await this.prisma.transaction.findFirst({
+      where: { offerId }
+    });
+  
+    if (existingTransaction) {
+      return existingTransaction;
+    }
+  
+    // Create transaction
+    const transaction = await this.prisma.transaction.create({
+      data: {
+        buyerId: offer.buyerId,
+        sellerId: offer.sellerId,
+        propertyId: offer.propertyId,
+        amount: offer.amount,
+        escrowAmount: offer.amount,
+        status: 'PENDING',
+        offerId: offer.offerId
+      },
+      include: {
+        buyer: { select: { id: true, name: true, email: true } },
+        seller: { select: { id: true, name: true, email: true } },
+        property: { select: { id: true, propertyId: true, title: true } }
+      }
+    });
+  
+    // Update property status
+    await this.prisma.property.update({
+      where: { propertyId:offer.propertyId },
+      data: { status: 'UNDER_OFFER' }
+    });
+  
+    return transaction;
+  }
+  async initiateTransaction(buyerId: number, propertyId: string, offerAmount: number) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId },
+      where: { propertyId },
       include: { currentOwner: true }
     });
       
@@ -50,7 +110,7 @@ export class TransactionService {
     
     // Update property status
     await this.prisma.property.update({
-      where: { id: propertyId },
+      where: {  propertyId },
       data: { status: 'UNDER_OFFER' }
     });
     
@@ -119,7 +179,7 @@ export class TransactionService {
       await this.propertyService.transferOwnership(
       transaction.propertyId,
       transaction.buyerId,
-      transaction.id,
+      transaction.transactionId,
       transaction.amount
     );
     return updatedTransaction;
@@ -268,7 +328,7 @@ async getTransactionById(id: number) {
 
     // Update property back to listed
     await this.prisma.property.update({
-      where: { id: transaction.propertyId },
+      where: {  propertyId:transaction.propertyId },
       data: { status: 'LISTED' }
     });
 

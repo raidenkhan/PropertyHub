@@ -140,7 +140,7 @@ private async handleChargeSuccess(data: any) {
 
     // Update property back to listed if it was under offer
     await this.prisma.property.update({
-      where: { id: transaction.propertyId },
+      where: { propertyId:transaction.propertyId },
       data: { status: 'LISTED' },
     });
 
@@ -206,7 +206,7 @@ private async handleChargeSuccess(data: any) {
 
     // Update property back to listed
     await this.prisma.property.update({
-      where: { id: transaction.propertyId },
+      where: { propertyId: transaction.propertyId },
       data: { 
         status: 'LISTED',
         soldAt: null, // Clear sold date if it was set

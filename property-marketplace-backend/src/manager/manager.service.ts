@@ -91,9 +91,9 @@ export class ManagerService {
     });
   }
 
-  async approveProperty(propertyId: number, managerId: number,notes?:string) {
+  async approveProperty(propertyId: string, managerId: number,notes?:string) {
     try{const property = await this.prisma.property.findUnique({ 
-      where: { id: propertyId } 
+      where: { propertyId } 
     });
 
     if (!property) {
@@ -105,7 +105,7 @@ export class ManagerService {
     }
 
     const updatedProperty = await this.prisma.property.update({
-      where: { id: propertyId },
+      where: { propertyId },
       data: {
         status: 'VERIFIED',
         isVerified: true,
@@ -131,7 +131,7 @@ export class ManagerService {
     }
   }
 
-  async rejectProperty(propertyId: number, dto: ApproveRejectPropertyDto, managerId: number) {
+  async rejectProperty(propertyId, dto: ApproveRejectPropertyDto, managerId: number) {
     const property = await this.prisma.property.findUnique({ 
       where: { id: propertyId } 
     });
@@ -169,9 +169,9 @@ export class ManagerService {
     return updatedProperty;
   }
 
-  async suspendProperty(propertyId: number, reason: string, managerId: number) {
+  async suspendProperty(propertyId: string, reason: string, managerId: number) {
     const property = await this.prisma.property.findUnique({ 
-      where: { id: propertyId } 
+      where: {  propertyId } 
     });
 
     if (!property) {
@@ -179,7 +179,7 @@ export class ManagerService {
     }
 
     const updatedProperty = await this.prisma.property.update({
-      where: { id: propertyId },
+      where: {  propertyId },
       data: {
         status: 'SUSPENDED',
       },
@@ -203,9 +203,9 @@ export class ManagerService {
     return updatedProperty;
   }
 
-  async releaseEscrow(transactionId: number, notes: string | undefined, managerId: number) {
+  async releaseEscrow(transactionId: string, notes: string | undefined, managerId: number) {
   const transaction = await this.prisma.transaction.findUnique({
-    where: { id: transactionId },
+    where: { transactionId },
     include: { 
       property: true, 
       seller: true,
@@ -239,7 +239,7 @@ export class ManagerService {
 
     // 2. Update transaction
     const updatedTransaction = await this.prisma.transaction.update({
-      where: { id: transactionId },
+      where: {  transactionId },
       data: {
         status: 'COMPLETED',
         escrowReleased: true,
@@ -263,10 +263,10 @@ export class ManagerService {
       // 4. Add to property history
       await this.prisma.propertyHistory.create({
         data: {
-          propertyId: transaction.property.id,
+          propertyId: transaction.property.propertyId,
           fromOwnerId: transaction.property.currentOwnerId,
           toOwnerId: transaction.buyerId,
-          transactionId: transaction.id,
+          transactionId: transaction.transactionId,
           price: transaction.amount,
           eventType: 'SOLD',
           notes: notes || 'Sold via escrow release',

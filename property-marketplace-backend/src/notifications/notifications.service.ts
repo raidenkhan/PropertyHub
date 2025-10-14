@@ -8,8 +8,8 @@ export interface CreateNotificationDto {
   type: NotificationType;
   title: string;
   message: string;
-  relatedPropertyId?: number;
-  relatedTransactionId?: number;
+  relatedPropertyId?: string;
+  relatedTransactionId?: string;
   relatedDisputeId?: number;
   metadata?: any;
 }
@@ -137,9 +137,9 @@ export class NotificationsService {
   }
 
   // Property-specific notification creators
-  async notifyPropertyApproved(propertyId: number, managerId: number, notes?: string) {
+  async notifyPropertyApproved(propertyId: string, managerId: number, notes?: string) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId },
+      where: {  propertyId },
       include: {
         currentOwner: { select: { id: true, name: true } }
       }
@@ -166,9 +166,9 @@ export class NotificationsService {
     });
   }
 
-  async notifyPropertyRejected(propertyId: number, managerId: number, reason: string) {
+  async notifyPropertyRejected(propertyId: string, managerId: number, reason: string) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId },
+      where: {  propertyId },
       include: {
         currentOwner: { select: { id: true, name: true } }
       }
@@ -195,9 +195,9 @@ export class NotificationsService {
     });
   }
 
-  async notifyPropertySuspended(propertyId: number, managerId: number, reason: string) {
+  async notifyPropertySuspended(propertyId: string, managerId: number, reason: string) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId },
+      where: {  propertyId },
       include: {
         currentOwner: { select: { id: true, name: true } }
       }
@@ -225,9 +225,9 @@ export class NotificationsService {
   }
 
   // Transaction notifications
-  async notifyEscrowReleased(transactionId: number, managerId: number) {
+  async notifyEscrowReleased(transactionId: string, managerId: number) {
     const transaction = await this.prisma.transaction.findUnique({
-      where: { id: transactionId },
+      where: { transactionId },
       include: {
         seller: { select: { id: true, name: true } },
         buyer: { select: { id: true, name: true } },

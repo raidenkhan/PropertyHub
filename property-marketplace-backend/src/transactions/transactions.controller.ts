@@ -23,6 +23,29 @@ import { Roles } from '../auth/roles.decorator';
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionService) {}
 
+
+  @Post('initiate-from-offer')
+  @UseGuards(JwtAuthGuard)
+  async initiateFromOffer(
+    @Body() body: { offerId: string },
+    @Req() req
+  ) {
+    try {
+      const transaction = await this.transactionsService.initiateFromOffer(
+        req.user.userId,
+        body.offerId
+      );
+      
+      return {
+        status: 'success',
+        message: 'Transaction initiated from offer',
+        data: transaction,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
  @Get('history')
   async getHistory(@Req() req, @Query('role') role: 'buyer' | 'seller' | 'all' = 'all') {
     try {

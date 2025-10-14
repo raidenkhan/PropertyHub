@@ -91,7 +91,7 @@ export class ManagerController {
   @Patch('properties/:id/approve')
   @Roles('SUPER_ADMIN', 'ADMIN', 'PROPERTY_VERIFIER')
   async approveProperty(
-    @Param('id', ParseIntPipe) propertyId: number,
+    @Param('id') propertyId: string,
     @Req() req,
   ) {
     return this.managerService.approveProperty(propertyId, req.user.userId);
@@ -110,7 +110,7 @@ export class ManagerController {
   @Patch('properties/:id/suspend')
   @Roles('SUPER_ADMIN', 'ADMIN', 'PROPERTY_VERIFIER')
   async suspendProperty(
-    @Param('id', ParseIntPipe) propertyId: number,
+    @Param('id') propertyId: string,
     @Body() dto: SuspendPropertyDto,
     @Req() req,
   ) {
@@ -133,7 +133,7 @@ export class ManagerController {
   @Patch('transactions/:id/release-escrow')
   @Roles('SUPER_ADMIN', 'ADMIN', 'ESCROW_MANAGER')
   async releaseEscrow(
-    @Param('id', ParseIntPipe) transactionId: number,
+    @Param('id') transactionId: string,
     @Body() dto: { notes?: string },
     @Req() req,
   ) {

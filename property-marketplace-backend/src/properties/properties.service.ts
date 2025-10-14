@@ -43,7 +43,7 @@ export class PropertyService {
     // Create initial history record
     await this.prisma.propertyHistory.create({
       data: {
-        propertyId: property.id,
+        propertyId: property.propertyId,
         toOwnerId: userId,
         eventType: 'CREATED',
         notes: 'Property initially created'
@@ -201,9 +201,9 @@ console.log('Returning property:', property);
   /**
    * List a property for sale
    */
-  async listProperty(propertyId: number, ownerId: number) {
+  async listProperty(propertyId: string, ownerId: number) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId }
+      where: {  propertyId }
     });
 
     if (!property) {
@@ -223,7 +223,7 @@ console.log('Returning property:', property);
     }
 
     const updatedProperty = await this.prisma.property.update({
-      where: { id: propertyId },
+      where: { propertyId },
       data: {
         status: 'LISTED',
         listedAt: new Date()
@@ -245,9 +245,9 @@ console.log('Returning property:', property);
   /**
    * Delist a property from sale
    */
-  async delistProperty(propertyId: number, ownerId: number) {
+  async delistProperty(propertyId: string, ownerId: number) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId }
+      where: { propertyId }
     });
     
     if (!property) {
@@ -263,7 +263,7 @@ console.log('Returning property:', property);
     }
 
     const updatedProperty = await this.prisma.property.update({
-      where: { id: propertyId },
+      where: { propertyId },
       data: {
         status: 'DRAFT',
         listedAt: null,
@@ -285,9 +285,9 @@ console.log('Returning property:', property);
   /**
    * Submit a property for verification
    */
-  async submitForVerification(propertyId: number, ownerId: number) {
+  async submitForVerification(propertyId: string, ownerId: number) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId }
+      where: {  propertyId }
     });
     
     if (!property) {
@@ -307,7 +307,7 @@ console.log('Returning property:', property);
     }
 
     const updatedProperty = await this.prisma.property.update({
-      where: { id: propertyId },
+      where: {  propertyId },
       data: {
         status: 'PENDING_VERIFICATION'
       }
@@ -416,7 +416,7 @@ console.log('Returning property:', property);
   /**
    * Admin: Verify a property
    */
-  async verifyProperty(propertyId: number, verifierId: number, approved: boolean, notes?: string) {
+  async verifyProperty(propertyId: string, verifierId: number, approved: boolean, notes?: string) {
     const verifier = await this.prisma.user.findUnique({
       where: { id: verifierId },
       include: {
@@ -431,7 +431,7 @@ console.log('Returning property:', property);
       throw new ForbiddenException('Insufficient permissions to verify properties');
     }
 
-    const property = await this.prisma.property.findUnique({ where: { id: propertyId }});
+    const property = await this.prisma.property.findUnique({ where: {  propertyId }});
     if (!property) {
         throw new NotFoundException('Property not found');
     }
@@ -440,7 +440,7 @@ console.log('Returning property:', property);
     }
 
     const updatedProperty = await this.prisma.property.update({
-      where: { id: propertyId },
+      where: {  propertyId },
       data: {
         isVerified: approved,
         verifiedById: verifierId,
@@ -464,7 +464,7 @@ console.log('Returning property:', property);
   /**
    * Admin: Suspend a property
    */
-  async suspendProperty(propertyId: number, verifierId: number, reason: string) {
+  async suspendProperty(propertyId: string, verifierId: number, reason: string) {
     const verifier = await this.prisma.user.findUnique({
       where: { id: verifierId },
       include: {
@@ -479,7 +479,7 @@ console.log('Returning property:', property);
       throw new ForbiddenException('Insufficient permissions to suspend properties');
     }
     
-    const property = await this.prisma.property.findUnique({ where: { id: propertyId } });
+    const property = await this.prisma.property.findUnique({ where: {  propertyId } });
     if (!property) {
       throw new NotFoundException('Property not found');
     }
@@ -488,7 +488,7 @@ console.log('Returning property:', property);
     }
     
     const updatedProperty = await this.prisma.property.update({
-      where: { id: propertyId },
+      where: {  propertyId },
       data: {
         status: 'SUSPENDED',
       }
@@ -639,9 +639,9 @@ console.log('Returning property:', property);
   /**
    * Transfer ownership of a property
    */
-  async transferOwnership(propertyId: number, newOwnerId: number, transactionId?: number, price?: number) {
+  async transferOwnership(propertyId: string, newOwnerId: number, transactionId?: string, price?: number) {
     const property = await this.prisma.property.findUnique({
-      where: { id: propertyId },
+      where: {  propertyId },
       include: { currentOwner: true }
     });
 
@@ -652,7 +652,7 @@ console.log('Returning property:', property);
     const oldOwnerId = property.currentOwnerId;
 
     const updatedProperty = await this.prisma.property.update({
-      where: { id: propertyId },
+      where: {  propertyId },
       data: {
         currentOwnerId: newOwnerId,
         soldAt: new Date(),
@@ -678,7 +678,7 @@ console.log('Returning property:', property);
   /**
    * Get a property's history
    */
-  async getPropertyHistory(propertyId: number) {
+  async getPropertyHistory(propertyId: string) {
     return this.prisma.propertyHistory.findMany({
       where: { propertyId },
       include: {

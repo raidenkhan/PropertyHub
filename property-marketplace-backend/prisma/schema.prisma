@@ -72,8 +72,8 @@ model Notification {
   type                  NotificationType
   title                 String
   message               String              @db.Text
-  relatedPropertyId     Int?
-  relatedTransactionId  Int?
+  relatedPropertyId     String?
+  relatedTransactionId  String?
   relatedDisputeId      Int?
   metadata              Json?
   isRead                Boolean             @default(false)
@@ -82,8 +82,8 @@ model Notification {
 
   // Relations
   user                  User                @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-  property              Property?           @relation("NotificationProperty", fields: [relatedPropertyId], references: [id], onDelete: SetNull)
-  transaction           Transaction?        @relation("NotificationTransaction", fields: [relatedTransactionId], references: [id], onDelete: SetNull)
+  property              Property?           @relation("NotificationProperty", fields: [relatedPropertyId], references: [propertyId], onDelete: SetNull)
+  transaction           Transaction?        @relation("NotificationTransaction", fields: [relatedTransactionId], references: [transactionId], onDelete: SetNull)
   dispute               Dispute?            @relation("NotificationDispute", fields: [relatedDisputeId], references: [id], onDelete: SetNull)
 
   @@index([userId])
@@ -189,19 +189,19 @@ model PropertyLike {
 
 model PropertyHistory {
   id            Int                @id @default(autoincrement())
-  propertyId    Int
+  propertyId    String
   fromOwnerId   Int?
   toOwnerId     Int
-  transactionId Int?               @unique
+  transactionId String?               @unique
   price         Float?
   eventType     PropertyEventType
   eventDate     DateTime           @default(now())
   notes         String?
 
-  property      Property           @relation(fields: [propertyId], references: [id])
+  property      Property           @relation(fields: [propertyId], references: [propertyId])
   fromOwner     User?              @relation("PropertyOwnerfrom", fields: [fromOwnerId], references: [id])
   toOwner       User               @relation("PropertyOwnerto", fields: [toOwnerId], references: [id])
-  transaction   Transaction?       @relation(fields: [transactionId], references: [id])           
+  transaction   Transaction?       @relation(fields: [transactionId], references: [transactionId])           
 
 
   @@index([propertyId])
@@ -220,8 +220,8 @@ model Transaction {
   sellerId          Int
 
   // Property
-  property          Property          @relation(fields: [propertyId], references: [id])
-  propertyId        Int
+  property          Property          @relation(fields: [propertyId], references: [propertyId])
+  propertyId        String
 
   // Escrow
   escrowAmount      Float?
@@ -246,8 +246,8 @@ model Transaction {
   //notifications
   notifications         Notification[]      @relation("NotificationTransaction")
 
-  offerId     Int?
-  offer       Offer? @relation(fields: [offerId], references: [id])
+  offerId     String?
+  offer       Offer? @relation(fields: [offerId], references: [offerId])
 
   @@index([transactionId])
   @@index([buyerId])

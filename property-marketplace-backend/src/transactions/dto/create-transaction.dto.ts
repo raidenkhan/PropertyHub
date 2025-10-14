@@ -4,7 +4,7 @@ import { TransactionStatus } from '@prisma/client'; // Assuming you generate a c
 // A DTO for initiating a new transaction
 export class CreateTransactionDto {
   @IsInt()
-  propertyId: number;
+  propertyId: string;
 
   @IsNumber()
   offerAmount: number;

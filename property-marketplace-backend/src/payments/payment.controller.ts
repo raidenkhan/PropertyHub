@@ -188,7 +188,7 @@ export class PaymentController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPER_ADMIN', 'ADMIN', 'ESCROW_MANAGER')
   async releaseEscrow(
-    @Param('id', ParseIntPipe) transactionId: number,
+    @Param('id') transactionId: string,
     @Body() dto: ReleaseEscrowDto,
     @Req() req,
   ) {

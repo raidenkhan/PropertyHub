@@ -227,7 +227,7 @@ export class PropertiesController {
    * Get property history (public for transparency)
    */
   @Get(':id/history')
-  async getPropertyHistory(@Param('id', ParseIntPipe) id: number) {
+  async getPropertyHistory(@Param('id') id:string) {
     try {
       const history = await this.propertyService.getPropertyHistory(id);
       
@@ -305,7 +305,7 @@ async togglePropertyLike(
    */
   @Patch(':id/submit-for-verification')
   @UseGuards(JwtAuthGuard)
-  async submitForVerification(@Param('id', ParseIntPipe) id: number, @Req() req) {
+  async submitForVerification(@Param('id') id: string, @Req() req) {
     try {
       const property = await this.propertyService.submitForVerification(id, req.user.userId);
       
@@ -354,7 +354,7 @@ async isPropertyLiked(
    */
   @Patch(':id/list')
   @UseGuards(JwtAuthGuard)
-  async listProperty(@Param('id', ParseIntPipe) id: number, @Req() req) {
+  async listProperty(@Param('id') id: string, @Req() req) {
     try {
       const property = await this.propertyService.listProperty(id, req.user.userId);
       
@@ -373,7 +373,7 @@ async isPropertyLiked(
    */
   @Patch(':id/delist')
   @UseGuards(JwtAuthGuard)
-  async delistProperty(@Param('id', ParseIntPipe) id: number, @Req() req) {
+  async delistProperty(@Param('id') id: string, @Req() req) {
     try {
       const property = await this.propertyService.delistProperty(id, req.user.userId);
       

@@ -34,6 +34,7 @@ export class PaymentService {
         buyer: true,
         seller: true,
         property: true,
+        
       },
     });
 
@@ -72,7 +73,7 @@ export class PaymentService {
     // if (!transaction.buyer.phone) {
     //   throw new BadRequestException('Buyer must have a phone number for payment processing');
     // }
-
+   
     // Initialize payment with Paystack
     const paystackResponse = await this.paystack.initializePayment({
       email: transaction.buyer.email,
@@ -292,9 +293,9 @@ export class PaymentService {
   /**
    * Release escrow funds (Admin/Manager only)
    */
-  async releaseEscrow(transactionId: number, managerId: number, notes?: string) {
+  async releaseEscrow(transactionId: string, managerId: number, notes?: string) {
     const transaction = await this.prisma.transaction.findUnique({
-      where: { id: transactionId },
+      where: { transactionId },
       include: {
         property: true,
         buyer: true,
@@ -316,7 +317,7 @@ export class PaymentService {
 
     // Update transaction
     const updatedTransaction = await this.prisma.transaction.update({
-      where: { id: transactionId },
+      where: { transactionId },
       data: {
         status: 'COMPLETED',
         escrowReleased: true,
@@ -328,7 +329,7 @@ export class PaymentService {
 
     // Transfer property ownership
     await this.prisma.property.update({
-      where: { id: transaction.propertyId },
+      where: { propertyId: transaction.propertyId },
       data: {
         currentOwnerId: transaction.buyerId,
         status: 'SOLD',
@@ -342,7 +343,7 @@ export class PaymentService {
         propertyId: transaction.propertyId,
         fromOwnerId: transaction.sellerId,
         toOwnerId: transaction.buyerId,
-        transactionId: transaction.id,
+        transactionId: transaction.transactionId,
         price: transaction.amount,
         eventType: 'SOLD',
         notes: notes || 'Property sold and ownership transferred',
