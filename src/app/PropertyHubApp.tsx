@@ -21,6 +21,7 @@ import { FeaturedProperties } from "@/components/FeaturedProperties"
 import { Testimonials } from "@/components/Testimonials"
 import { Property, PropertyCoordinates } from "@/types/property"
 import { useAuth } from "@/lib/auth/authContext"
+import { usePaymentCleanup } from "@/hooks/usePaymentCleanup"
 
 // Helper function to parse price string to number for comparison
 const parsePriceToNumber = (price: string): number => {
@@ -266,6 +267,9 @@ export default function App() {
   })
   
   const {user}=useAuth()
+  
+  // Initialize payment cleanup system
+  usePaymentCleanup()
 
   // Handle responsive default view mode changes
   useEffect(() => {

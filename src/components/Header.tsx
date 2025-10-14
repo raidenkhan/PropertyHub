@@ -1,6 +1,6 @@
 "use client";
 import { useState ,useEffect} from "react";
-import { Search, Bell, User, Heart, LogOut, Home, MessageSquare, Plus, LayoutDashboard, AlertTriangle, Settings, ChevronDown } from "lucide-react";
+import { Search, Bell, User, Heart, LogOut, Home, MessageSquare, Plus, LayoutDashboard, AlertTriangle, Settings, ChevronDown, DollarSign } from "lucide-react";
 import Link from 'next/link';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -234,6 +234,17 @@ export function Header() {
                         {unreadCount}
                       </Badge>
                     )}
+                  </Button>
+
+                  {/* Desktop Offers */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="hidden lg:flex items-center gap-1 hover:bg-accent relative px-2 xl:px-3"
+                    onClick={() => router.push('/offers')}
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span className="text-sm">Offers</span>
                   </Button>
 
                   {/* Desktop Notifications */}

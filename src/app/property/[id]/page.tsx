@@ -27,7 +27,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth/authContext";
 import { propertyService } from "@/lib/api/propertyService";
-import { paymentService } from "@/lib/api/paymentService";
+import { paymentService } from "@/lib/api/paymentService"
+import { offerService } from "@/lib/api/offerService"
 import { messagesService } from "@/lib/api/messageService";
 import { toast } from "@/hooks/use-toast";
 import mapboxgl from 'mapbox-gl';
@@ -38,6 +39,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 // Types
 interface Property {
   id: number;
+  propertyId:string;
   title: string;
   description: string;
   price: number;
@@ -322,8 +324,8 @@ const handleSendMessage = async () => {
 // Add this button to your JSX for testing (temporary)
 // 
 
-  // Handle Pay Now
-  const handlePayNow = async () => {
+  // Handle Make Offer (replaces direct payment)
+  const handleMakeOffer = async () => {
     if (!property) return;
 
     if (!user) {
@@ -361,20 +363,27 @@ const handleSendMessage = async () => {
 
     try {
       setIsPaying(true);
-   
-      // Step 1: Initiate transaction
-      const initResponse = await paymentService.initiateTransaction(property.id, offerAmount);
-      const transactionId = initResponse.data?.id;
-
-      // Step 2: Initialize Paystack payment
-      const paystackResponse = await paymentService.initializePayment(transactionId);
-
-      // Step 3: Redirect to Paystack
-      window.location.href = paystackResponse.data?.authorization_url || "/";
+      
+      // Create offer using the offer service
+      const result = await offerService.createOffer({
+        propertyId: property.propertyId,
+        amount: offerAmount,
+        message: `I'm interested in purchasing this property for ₦${offerAmount.toLocaleString()}.`
+      });
+      
+      toast({
+        title: "🎉 Offer Submitted!",
+        description: "Your offer has been sent to the property owner. They will review and respond soon.",
+      });
+      
+      // Redirect to offer tracking page
+      router.push(`/offers/${result.data.offerId}`);
+      
     } catch (error: any) {
       toast({
-        title: "❌ Payment Failed",
-        description: error.message,
+        title: "❌ Offer Failed",
+        description: error.message || 'Failed to submit offer',
+        variant: "destructive"
       });
     } finally {
       setIsPaying(false);
@@ -605,19 +614,19 @@ const handleSendMessage = async () => {
                       <div className="space-y-3">
                         <Button 
                           size="lg"
-                          className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold text-lg py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                          onClick={handlePayNow}
+                          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-lg py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                          onClick={handleMakeOffer}
                           disabled={isPaying}
                         >
                           {isPaying ? (
                             <div className="flex items-center">
                               <div className="animate-spin h-5 w-5 mr-3 border-2 border-white border-t-transparent rounded-full"></div>
-                              Processing Payment...
+                              Submitting Offer...
                             </div>
                           ) : (
                             <>
                               <DollarSign className="w-5 h-5 mr-2" />
-                              Purchase Property
+                              Make Offer
                             </>
                           )}
                         </Button>

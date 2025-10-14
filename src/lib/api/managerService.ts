@@ -24,7 +24,7 @@ export const managerService = {
     return { data };
   },
 
-  approveProperty: async (propertyId: number, notes?: string): Promise<ApiResponse<Property>> => {
+  approveProperty: async (propertyId: string, notes?: string): Promise<ApiResponse<Property>> => {
     try {
       const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/approve`, {
         method: 'PATCH',
@@ -50,7 +50,7 @@ export const managerService = {
     }
   },
 
-  rejectProperty: async (propertyId: number, reason: string): Promise<ApiResponse<Property>> => {
+  rejectProperty: async (propertyId: string, reason: string): Promise<ApiResponse<Property>> => {
     try {
       const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/reject`, {
         method: 'PATCH',
@@ -77,7 +77,7 @@ export const managerService = {
     }
   },
 
-  suspendProperty: async (propertyId: number, reason: string): Promise<ApiResponse<Property>> => {
+  suspendProperty: async (propertyId: string, reason: string): Promise<ApiResponse<Property>> => {
     const response = await authService.authenticatedFetch(`${API_URL}/manager/properties/${propertyId}/suspend`, {
       method: 'PATCH',
       headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
@@ -204,6 +204,7 @@ export const managerService = {
 // Types (aligned with your page.tsx)
 export interface Property {
   id: number;
+  propertyId:string;
   title: string;
   location: string;
   price: number;

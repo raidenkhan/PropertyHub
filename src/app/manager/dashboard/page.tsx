@@ -23,6 +23,7 @@ import { SkeletonLoader } from "@/components/skeletonLoader";
 // Types
 interface Property {
   id: number;
+  propertyId:string;
   title: string;
   location: string;
   price: number;
@@ -185,7 +186,7 @@ useEffect(() => {
   const confirmApprove = async () => {
     if (!selectedProperty) return;
     try {
-      await managerService.approveProperty(selectedProperty.id, notes);
+      await managerService.approveProperty(selectedProperty.propertyId, notes);
       toast({
         title: "✅ Property Approved",
         description: `${selectedProperty.title} is now live!`,
@@ -211,7 +212,7 @@ useEffect(() => {
       return;
     }
     try {
-      await managerService.rejectProperty(selectedProperty.id, notes);
+      await managerService.rejectProperty(selectedProperty.propertyId, notes);
       toast({
         title: "✅ Property Rejected",
         description: `${selectedProperty.title} has been rejected.`,
@@ -237,7 +238,7 @@ useEffect(() => {
       return;
     }
     try {
-      await managerService.suspendProperty(selectedProperty.id, reason);
+      await managerService.suspendProperty(selectedProperty.propertyId, reason);
       toast({
         title: "✅ Property Suspended",
         description: `${selectedProperty.title} has been suspended.`,

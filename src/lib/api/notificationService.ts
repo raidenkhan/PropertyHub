@@ -11,8 +11,8 @@ export interface Notification {
   type: string;
   title: string;
   message: string;
-  relatedPropertyId?: number;
-  relatedTransactionId?: number;
+  relatedPropertyId?: string;
+  relatedTransactionId?: string;
   relatedDisputeId?: number;
   metadata?: any;
   isRead: boolean;

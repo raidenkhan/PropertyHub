@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Upload, MapPin, DollarSign, Home, Clock, Star, CheckCircle, XCircle, Search, Navigation } from "lucide-react";
+import { Upload, MapPin, DollarSign, Home, Clock, Star, CheckCircle, XCircle, Search, Navigation, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth/authContext";
 import { toast } from "@/hooks/use-toast";
 import { propertyService } from '@/lib/api/propertyService';
@@ -171,6 +171,12 @@ export default function NewPropertyPage() {
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
   
+  // Refs for form sections to enable scroll-to-error
+  const basicInfoRef = useRef<HTMLDivElement>(null);
+  const locationRef = useRef<HTMLDivElement>(null);
+  const detailsRef = useRef<HTMLDivElement>(null);
+  const imagesRef = useRef<HTMLDivElement>(null);
+  
   const [formData, setFormData] = useState<PropertyFormData>({
     title: "",
     description: "",
@@ -189,6 +195,7 @@ export default function NewPropertyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
+  const [showValidationSummary, setShowValidationSummary] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({
     lat: 6.5244, // Lagos default
     lng: 3.3792,
@@ -595,6 +602,38 @@ export default function NewPropertyPage() {
     }
   };
 
+  const scrollToFirstError = (errors: Record<string, string>) => {
+    const errorFields = Object.keys(errors);
+    if (errorFields.length === 0) return;
+
+    // Define order of sections and their refs
+    const sectionOrder = [
+      { fields: ['title', 'description', 'price'], ref: basicInfoRef, name: 'Basic Information' },
+      { fields: ['location'], ref: locationRef, name: 'Location' },
+      { fields: ['bedrooms', 'bathrooms', 'area'], ref: detailsRef, name: 'Property Details' },
+      { fields: ['images'], ref: imagesRef, name: 'Property Images' }
+    ];
+
+    // Find the first section with errors
+    for (const section of sectionOrder) {
+      const hasError = section.fields.some(field => errors[field]);
+      if (hasError && section.ref.current) {
+        section.ref.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+        
+        // Add visual highlight to the section
+        section.ref.current.classList.add('ring-2', 'ring-red-500', 'ring-opacity-50');
+        setTimeout(() => {
+          section.ref.current?.classList.remove('ring-2', 'ring-red-500', 'ring-opacity-50');
+        }, 3000);
+        
+        return;
+      }
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -650,7 +689,19 @@ export default function NewPropertyPage() {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    // If there are errors, show validation summary and scroll to first error
+    if (Object.keys(newErrors).length > 0) {
+      setShowValidationSummary(true);
+      setTimeout(() => scrollToFirstError(newErrors), 100);
+      
+      // Hide validation summary after 5 seconds
+      setTimeout(() => setShowValidationSummary(false), 5000);
+      
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -768,6 +819,45 @@ console.log(formDataToSend)
       <AnimatedBackground />
       <Header />
 
+      {/* Validation Summary Popup */}
+      {showValidationSummary && Object.keys(errors).length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md mx-4"
+        >
+          <Alert className="bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-700 shadow-lg">
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <AlertTitle className="text-red-800 dark:text-red-200">
+              Please fix the following issues:
+            </AlertTitle>
+            <AlertDescription className="text-red-700 dark:text-red-300 mt-2">
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                {Object.entries(errors).map(([field, message]) => (
+                  <li key={field}>
+                    <span className="font-medium capitalize">
+                      {field === 'bedrooms' ? 'Bedrooms' :
+                       field === 'bathrooms' ? 'Bathrooms' :
+                       field === 'images' ? 'Images' :
+                       field.charAt(0).toUpperCase() + field.slice(1)}
+                    </span>: {message}
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+            <Button
+              variant="ghost" 
+              size="sm" 
+              className="absolute top-2 right-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+              onClick={() => setShowValidationSummary(false)}
+            >
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </Alert>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -819,7 +909,7 @@ console.log(formDataToSend)
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Basic Information */}
-          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+          <Card ref={basicInfoRef} className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm transition-all duration-300">
             <CardHeader>
               <CardTitle className="text-xl font-bold text-foreground dark:text-white">Basic Information</CardTitle>
             </CardHeader>
@@ -876,7 +966,7 @@ console.log(formDataToSend)
           </Card>
 
           {/* Location & Map */}
-          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+          <Card ref={locationRef} className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm transition-all duration-300">
             <CardHeader>
               <CardTitle className="text-xl font-bold text-foreground dark:text-white">Location</CardTitle>
             </CardHeader>

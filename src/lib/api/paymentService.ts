@@ -17,8 +17,48 @@ interface ApiResponse<T> {
 }
 
 export const paymentService = {
-  // Step 1: Initiate transaction (create record in DB)
-  initiateTransaction: async (propertyId: number, amount: number) => {
+  // Step 1: Reserve property temporarily (doesn't change property status to UNDER_OFFER)
+  reserveProperty: async (propertyId: number, amount: number) => {
+    console.log("Reserving property for payment:", propertyId);
+    const response = await fetch(`${API_URL}/transactions/reserve`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        propertyId, 
+        offerAmount: amount,
+        reservationTimeout: 15 * 60 * 1000 // 15 minutes reservation
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to reserve property');
+    }
+    const data = await response.json();
+    console.log("Property reserved:", data);
+    return data;
+  },
+
+  // Step 1 (Enhanced): Initiate transaction from accepted offer
+  initiateTransactionFromOffer: async (offerId: string) => {
+    console.log("Initiating transaction from accepted offer:", offerId);
+    const response = await fetch(`${API_URL}/transactions/initiate-from-offer`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ offerId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to initiate transaction from offer');
+    }
+    const data = await response.json();
+    console.log("Transaction initiated from offer:", data);
+    return data;
+  },
+
+  // Step 1 (Fallback): Initiate transaction (create record in DB) - for backward compatibility
+  initiateTransaction: async (propertyId: string, amount: number) => {
     console.log("Initiating transaction for propertyId:", propertyId);
     const response = await fetch(`${API_URL}/transactions/initiate`, {
       method: 'POST',
@@ -65,6 +105,57 @@ export const paymentService = {
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       throw new Error(error.message || 'Failed to verify payment');
+    }
+    const data = await response.json();
+    return data;
+  },
+
+  // Cancel payment and release property reservation
+  cancelPayment: async (transactionId: number, reason: string = 'User cancelled') => {
+    console.log("Cancelling payment for transaction:", transactionId);
+    const response = await fetch(`${API_URL}/payments/cancel`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transactionId, reason }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to cancel payment');
+    }
+    const data = await response.json();
+    console.log("Payment cancelled:", data);
+    return data;
+  },
+
+  // Release property reservation (for cleanup)
+  releaseReservation: async (propertyId: number, transactionId?: number) => {
+    console.log("Releasing reservation for property:", propertyId);
+    const response = await fetch(`${API_URL}/transactions/release-reservation`, {
+      method: 'POST',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ propertyId, transactionId }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to release reservation');
+    }
+    const data = await response.json();
+    console.log("Reservation released:", data);
+    return data;
+  },
+
+  // Get payment status
+  getPaymentStatus: async (transactionId: number) => {
+    const response = await fetch(`${API_URL}/payments/status/${transactionId}`, {
+      method: 'GET',
+      headers: { ...getAuthHeader() },
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to get payment status');
     }
     const data = await response.json();
     return data;
